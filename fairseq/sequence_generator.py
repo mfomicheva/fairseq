@@ -22,7 +22,7 @@ class SequenceGenerator(object):
         normalize_scores=True,
         len_penalty=1.,
         unk_penalty=0.,
-        retain_dropout=False,
+        retain_dropout=True,
         sampling=False,
         sampling_topk=-1,
         sampling_topp=-1.0,
