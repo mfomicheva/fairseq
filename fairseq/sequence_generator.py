@@ -581,6 +581,7 @@ class EnsembleModel(torch.nn.Module):
         self, tokens, model, encoder_out, incremental_states, log_probs,
         temperature=1.,
     ):
+        print(str(model.training))
         if self.incremental_states is not None:
             decoder_out = list(model.decoder(tokens, encoder_out, incremental_state=self.incremental_states[model]))
         else:
