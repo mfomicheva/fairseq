@@ -199,7 +199,7 @@ class TransformerEncoder(FairseqEncoder):
         self.register_buffer('version', torch.Tensor([3]))
 
         self.dropout = args.dropout
-
+        self.retain_dropout = args.retain_dropout
         embed_dim = embed_tokens.embedding_dim
         self.padding_idx = embed_tokens.padding_idx
         self.max_source_positions = args.max_source_positions
@@ -238,10 +238,15 @@ class TransformerEncoder(FairseqEncoder):
                   padding elements of shape `(batch, src_len)`
         """
         # embed tokens and positions
+
+        print('Using Transformer class')
+        print(str(self.retain_dropout))
+        print(str(self.dropout))
+
         x = self.embed_scale * self.embed_tokens(src_tokens)
         if self.embed_positions is not None:
             x += self.embed_positions(src_tokens)
-        x = F.dropout(x, p=self.dropout, training=self.training)
+        x = F.dropout(x, p=self.dropout, training=self.training or self.retain_dropout)
 
         # B x T x C -> T x B x C
         x = x.transpose(0, 1)
@@ -326,6 +331,7 @@ class TransformerDecoder(FairseqIncrementalDecoder):
         self.register_buffer('version', torch.Tensor([3]))
 
         self.dropout = args.dropout
+        self.retain_dropout = args.retain_dropout
         self.share_input_output_embed = args.share_decoder_input_output_embed
 
         input_embed_dim = embed_tokens.embedding_dim
@@ -422,7 +428,7 @@ class TransformerDecoder(FairseqIncrementalDecoder):
 
         if positions is not None:
             x += positions
-        x = F.dropout(x, p=self.dropout, training=self.training)
+        x = F.dropout(x, p=self.dropout, training=self.training or self.retain_dropout)
 
         # B x T x C -> T x B x C
         x = x.transpose(0, 1)
@@ -548,6 +554,7 @@ def base_architecture(args):
     args.share_all_embeddings = getattr(args, 'share_all_embeddings', False)
     args.no_token_positional_embeddings = getattr(args, 'no_token_positional_embeddings', False)
     args.adaptive_input = getattr(args, 'adaptive_input', False)
+    args.retain_dropout = getattr(args, 'retain_dropout', False)
 
     args.decoder_output_dim = getattr(args, 'decoder_output_dim', args.decoder_embed_dim)
     args.decoder_input_dim = getattr(args, 'decoder_input_dim', args.decoder_embed_dim)
