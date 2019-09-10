@@ -116,6 +116,7 @@ class SequenceGenerator(object):
         """
 
         if self.retain_dropout:
+            print('Retaining dropout')
             for m in models:
                 m.training = True
 
