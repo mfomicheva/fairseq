@@ -176,7 +176,6 @@ class TransformerModel(FairseqEncoderDecoderModel):
 
     @classmethod
     def build_encoder(cls, args, src_dict, embed_tokens):
-        print('Building encoder...')
         return TransformerEncoder(args, src_dict, embed_tokens)
 
     @classmethod
@@ -200,7 +199,7 @@ class TransformerEncoder(FairseqEncoder):
         self.register_buffer('version', torch.Tensor([3]))
 
         self.dropout = args.dropout
-
+        print(args)
         embed_dim = embed_tokens.embedding_dim
         self.padding_idx = embed_tokens.padding_idx
         self.max_source_positions = args.max_source_positions
