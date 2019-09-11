@@ -199,7 +199,8 @@ class TransformerEncoder(FairseqEncoder):
         self.register_buffer('version', torch.Tensor([3]))
 
         self.dropout = args.dropout
-        print(args)
+        if args.retain_dropout:
+            self.training = True
         embed_dim = embed_tokens.embedding_dim
         self.padding_idx = embed_tokens.padding_idx
         self.max_source_positions = args.max_source_positions
@@ -331,6 +332,8 @@ class TransformerDecoder(FairseqIncrementalDecoder):
         self.register_buffer('version', torch.Tensor([3]))
 
         self.dropout = args.dropout
+        if args.retain_dropout:
+            self.training = True
         self.share_input_output_embed = args.share_decoder_input_output_embed
 
         input_embed_dim = embed_tokens.embedding_dim
