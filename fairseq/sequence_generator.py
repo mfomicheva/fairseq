@@ -541,7 +541,6 @@ class EnsembleModel(torch.nn.Module):
     def forward_encoder(self, encoder_input):
         if not self.has_encoder():
             return None
-        print(encoder_input)
         return [model.encoder(**encoder_input) for model in self.models]
 
     @torch.no_grad()

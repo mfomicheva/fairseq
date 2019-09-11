@@ -176,6 +176,7 @@ class TransformerModel(FairseqEncoderDecoderModel):
 
     @classmethod
     def build_encoder(cls, args, src_dict, embed_tokens):
+        print('Building encoder...')
         return TransformerEncoder(args, src_dict, embed_tokens)
 
     @classmethod
