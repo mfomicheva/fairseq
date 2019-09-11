@@ -200,6 +200,7 @@ class TransformerEncoder(FairseqEncoder):
 
         self.dropout = args.dropout
         if args.retain_dropout:
+            print('Setting training to True...')
             self.training = True
         embed_dim = embed_tokens.embedding_dim
         self.padding_idx = embed_tokens.padding_idx
