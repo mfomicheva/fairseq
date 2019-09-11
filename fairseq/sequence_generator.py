@@ -22,7 +22,7 @@ class SequenceGenerator(object):
         normalize_scores=True,
         len_penalty=1.,
         unk_penalty=0.,
-        retain_dropout=True,
+        retain_dropout=False,
         sampling=False,
         sampling_topk=-1,
         sampling_topp=-1.0,
@@ -114,10 +114,6 @@ class SequenceGenerator(object):
             prefix_tokens (torch.LongTensor, optional): force decoder to begin
                 with these tokens
         """
-
-        if self.retain_dropout:
-            for m in models:
-                m.training = True
 
         model = EnsembleModel(models)
         if not self.retain_dropout:

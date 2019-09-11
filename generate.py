@@ -45,6 +45,7 @@ def main(args):
         args.path.split(':'),
         arg_overrides=eval(args.model_overrides),
         task=task,
+        retain_dropout=args.retain_dropout
     )
 
     # Optimize ensemble for generation
