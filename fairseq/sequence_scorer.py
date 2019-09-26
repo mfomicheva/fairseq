@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import numpy
 import torch
 import sys
 
@@ -72,6 +73,7 @@ class SequenceScorer(object):
                         proba_copy = curr_prob[i][t].cpu()
                         print(proba_copy.shape)
                         print(proba_copy[:10])
+                        print(numpy.mean(proba_copy))
                         entrops.append(entropy(proba_copy))
                 print(entrops)
                 if is_single:
