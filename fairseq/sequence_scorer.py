@@ -7,6 +7,7 @@ import torch
 import sys
 
 from fairseq import utils
+from scipy.stats import entropy
 
 
 class SequenceScorer(object):
@@ -38,6 +39,7 @@ class SequenceScorer(object):
                     s = e
 
         def gather_target_probs(probs, target):
+            print(target)
             probs = probs.gather(
                 dim=2,
                 index=target.unsqueeze(-1),
@@ -59,6 +61,24 @@ class SequenceScorer(object):
             for bd, tgt, is_single in batched:
                 sample['target'] = tgt
                 curr_prob = model.get_normalized_probs(bd, log_probs=len(models) == 1, sample=sample).data
+                print(tgt)
+                print(curr_prob.shape)
+                bsz, tsz, vb = curr_prob.shape
+                entrops = []
+                stds = []
+                vars = []
+                for i in range(bsz):
+                    for t in range(tsz):
+                        proba_copy = curr_prob[i][t].cpu()
+                        torch.save(proba_copy, '/tmp/probas.pt')
+                        entrops.append(entropy(proba_copy))
+                        #stds.append(proba_copy.std().type(dtype=torch.float32).numpy().tolist())
+                        #vars.append(proba_copy.var().type(dtype=torch.float32).numpy().tolist())
+                        stds.append(proba_copy.numpy().std())
+                        vars.append(proba_copy.numpy().var())
+                print(entrops)
+                print(stds)
+                print(vars)
                 if is_single:
                     probs = gather_target_probs(curr_prob, orig_target)
                 else:
