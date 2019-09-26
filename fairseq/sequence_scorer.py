@@ -67,6 +67,7 @@ class SequenceScorer(object):
                 for i in range(bsz):
                     for t in range(tsz):
                         proba_copy = curr_prob[i][t].cpu()
+                        print(proba_copy[0])
                         entrops.append(entropy(proba_copy))
                 print(entrops)
                 if is_single:
