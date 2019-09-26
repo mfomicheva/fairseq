@@ -61,6 +61,7 @@ class SequenceScorer(object):
                 sample['target'] = tgt
                 curr_prob = model.get_normalized_probs(bd, log_probs=len(models) == 1, sample=sample).data
                 print(curr_prob.shape)
+                print(curr_prob[0][0][4127])
                 if is_single:
                     probs = gather_target_probs(curr_prob, orig_target)
                 else:
