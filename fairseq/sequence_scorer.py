@@ -66,13 +66,16 @@ class SequenceScorer(object):
                 bsz, tsz, vb = curr_prob.shape
                 entrops = []
                 stds = []
+                vars = []
                 for i in range(bsz):
                     for t in range(tsz):
                         proba_copy = curr_prob[i][t].cpu()
                         entrops.append(entropy(proba_copy))
                         stds.append(proba_copy.std())
+                        vars.append(proba_copy.var())
                 print(entrops)
                 print(stds)
+                print(vars)
                 if is_single:
                     probs = gather_target_probs(curr_prob, orig_target)
                 else:
