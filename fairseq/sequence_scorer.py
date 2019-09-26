@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import math
 import torch
 import sys
 
@@ -61,7 +62,12 @@ class SequenceScorer(object):
                 sample['target'] = tgt
                 curr_prob = model.get_normalized_probs(bd, log_probs=len(models) == 1, sample=sample).data
                 print(curr_prob.shape)
-                print(curr_prob[0][0][4127])
+                bsz, tsz, vb = curr_prob.shape
+                entrops = []
+                for i in range(bsz):
+                    for t in range(tsz):
+                        entrops.append(-torch.sum(curr_prob[i][t] * math.log(curr_prob[i][t]), dim=0))
+                print(entrops)
                 if is_single:
                     probs = gather_target_probs(curr_prob, orig_target)
                 else:
