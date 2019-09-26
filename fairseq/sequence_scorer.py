@@ -73,7 +73,7 @@ class SequenceScorer(object):
                         proba_copy = curr_prob[i][t].cpu()
                         print(proba_copy.shape)
                         print(proba_copy[:10])
-                        print(numpy.mean(proba_copy))
+                        print(proba_copy.mean())
                         entrops.append(entropy(proba_copy))
                 print(entrops)
                 if is_single:
