@@ -3,11 +3,11 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import math
 import torch
 import sys
 
 from fairseq import utils
+from scipy.stats import entropy
 
 
 class SequenceScorer(object):
@@ -66,7 +66,7 @@ class SequenceScorer(object):
                 entrops = []
                 for i in range(bsz):
                     for t in range(tsz):
-                        entrops.append(-torch.sum(curr_prob[i][t] * math.log(curr_prob[i][t]), dim=0))
+                        entrops.append(entropy(curr_prob[i][t]))
                 print(entrops)
                 if is_single:
                     probs = gather_target_probs(curr_prob, orig_target)
