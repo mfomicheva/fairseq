@@ -74,6 +74,7 @@ class SequenceScorer(object):
                         print(proba_copy.shape)
                         print(proba_copy[:10])
                         print(proba_copy.mean())
+                        print(proba_copy.max())
                         entrops.append(entropy(proba_copy))
                 print(entrops)
                 if is_single:
