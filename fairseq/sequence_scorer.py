@@ -64,6 +64,9 @@ class SequenceScorer(object):
                 print(curr_prob.shape)
                 bsz, tsz, vb = curr_prob.shape
                 entrops = []
+                print(curr_prob[0][0][:10])
+                print(curr_prob[0][1][:10])
+                print(curr_prob[0][2][:10])
                 for i in range(bsz):
                     for t in range(tsz):
                         proba_copy = curr_prob[i][t].cpu()
