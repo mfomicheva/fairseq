@@ -103,6 +103,7 @@ class SequenceScorer(object):
         bsz = avg_probs.size(0)
         print(bsz)
         print(len(softmax_distribution))
+        print(len(softmax_distribution[0]))
         hypos = []
         start_idxs = sample['start_indices'] if 'start_indices' in sample else [0] * bsz
         for i in range(bsz):
