@@ -120,7 +120,8 @@ class SequenceScorer(object):
                 'positional_scores': avg_probs_i,
             }
             if softmax_distribution:
-                res.update({'positional_statistics': softmax_distribution[i]})
+                softmax_distribution_i = softmax_distribution[i][start_idxs[i]:start_idxs[i] + tgt_len]
+                res.update({'positional_statistics': softmax_distribution_i})
             hypos.append([res])
         return hypos
 
