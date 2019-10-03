@@ -175,7 +175,7 @@ def main(args):
                             sample_id,
                             ' '.join(map(
                                 lambda x: '{:.4f}'.format(x),
-                                hypo['positional_statistics'].tolist(),
+                                hypo['positional_statistics'],
                             ))
                         ))
 
