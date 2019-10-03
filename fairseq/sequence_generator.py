@@ -126,6 +126,7 @@ class SequenceGenerator(object):
         }
 
         src_tokens = encoder_input['src_tokens']
+        print(src_tokens)
         src_lengths = (src_tokens.ne(self.eos) & src_tokens.ne(self.pad)).long().sum(dim=1)
         input_size = src_tokens.size()
         # batch dimension goes first followed by source lengths
