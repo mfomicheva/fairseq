@@ -62,6 +62,7 @@ class SequenceScorer(object):
             for bd, tgt, is_single in batched:
                 sample['target'] = tgt
                 curr_prob = model.get_normalized_probs(bd, log_probs=len(models) == 1, sample=sample).data
+                print(tgt)
                 print(curr_prob.shape)
                 bsz, tsz, vb = curr_prob.shape
                 entrops = []
