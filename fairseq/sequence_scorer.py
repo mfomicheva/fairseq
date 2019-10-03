@@ -13,9 +13,10 @@ from scipy.stats import entropy
 class SequenceScorer(object):
     """Scores the target for a given source sentence."""
 
-    def __init__(self, tgt_dict, softmax_batch=None):
+    def __init__(self, tgt_dict, softmax_batch=None, summarize_softmax_distribution=None):
         self.pad = tgt_dict.pad()
         self.softmax_batch = softmax_batch or sys.maxsize
+        self.summarize_softmax_distribution = summarize_softmax_distribution
         assert self.softmax_batch > 0
 
     @torch.no_grad()
@@ -51,6 +52,7 @@ class SequenceScorer(object):
         # compute scores for each model in the ensemble
         avg_probs = None
         avg_attn = None
+        softmax_distribution = []
         for model in models:
             model.eval()
             decoder_out = model.forward(**net_input)
@@ -58,27 +60,13 @@ class SequenceScorer(object):
 
             batched = batch_for_softmax(decoder_out, orig_target)
             probs, idx = None, 0
+            softmax_distribution = []
             for bd, tgt, is_single in batched:
                 sample['target'] = tgt
                 curr_prob = model.get_normalized_probs(bd, log_probs=len(models) == 1, sample=sample).data
-                print(tgt)
-                print(curr_prob.shape)
                 bsz, tsz, vb = curr_prob.shape
-                entrops = []
-                stds = []
-                vars = []
-                for i in range(bsz):
-                    for t in range(tsz):
-                        proba_copy = curr_prob[i][t].cpu()
-                        torch.save(proba_copy, '/tmp/probas.pt')
-                        entrops.append(entropy(proba_copy))
-                        #stds.append(proba_copy.std().type(dtype=torch.float32).numpy().tolist())
-                        #vars.append(proba_copy.var().type(dtype=torch.float32).numpy().tolist())
-                        stds.append(proba_copy.numpy().std())
-                        vars.append(proba_copy.numpy().var())
-                print(entrops)
-                print(stds)
-                print(vars)
+                if self.summarize_softmax_distribution is not None:
+                    softmax_distribution.extend(self._summarize_softmax(curr_prob, bsz, tsz, self.summarize_softmax_distribution))
                 if is_single:
                     probs = gather_target_probs(curr_prob, orig_target)
                 else:
@@ -124,11 +112,35 @@ class SequenceScorer(object):
                 _, alignment = avg_attn_i.max(dim=0)
             else:
                 avg_attn_i = alignment = None
-            hypos.append([{
+            res = {
                 'tokens': ref,
                 'score': score_i,
                 'attention': avg_attn_i,
                 'alignment': alignment,
                 'positional_scores': avg_probs_i,
-            }])
+            }
+            if softmax_distribution:
+                softmax_distribution_i = softmax_distribution[i][start_idxs[i]:start_idxs[i] + tgt_len]
+                res.update({'positional_statistics': softmax_distribution_i})
+            hypos.append([res])
         return hypos
+
+    @staticmethod
+    def _summarize_softmax(softmax_probas, bsz, tsz, method):
+        def _step(step_probas):
+            if method == 'std':
+                return step_probas.numpy().std()
+            elif method == 'var':
+                return step_probas.numpy().var()
+            elif method == 'entr':
+                return entropy(step_probas)
+            else:
+                raise ValueError
+        output = []
+        for i in range(bsz):
+            segment_output = []
+            for t in range(tsz):
+                proba_copy = softmax_probas[i][t].cpu()
+                segment_output.append(_step(proba_copy))
+            output.append(segment_output)
+        return output
