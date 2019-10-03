@@ -66,7 +66,10 @@ class SequenceScorer(object):
                 curr_prob = model.get_normalized_probs(bd, log_probs=len(models) == 1, sample=sample).data
                 bsz, tsz, vb = curr_prob.shape
                 if self.summarize_softmax_distribution is not None:
-                    softmax_distribution.append(self._summarize_softmax(curr_prob, bsz, tsz, self.summarize_softmax_distribution))
+                    print('Appending...')
+                    _ = self._summarize_softmax(curr_prob, bsz, tsz, self.summarize_softmax_distribution)
+                    print(_)
+                    softmax_distribution.append(_)
                 if is_single:
                     probs = gather_target_probs(curr_prob, orig_target)
                 else:
