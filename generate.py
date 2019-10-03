@@ -170,8 +170,8 @@ def main(args):
                         else:
                             scorer.add(target_tokens, hypo_tokens)
 
-                    if 'positional_statisitcs' in hypo:
-                        print('S-{}\t{}'.format(
+                    if 'positional_statistics' in hypo:
+                        print('D-{}\t{}'.format(
                             sample_id,
                             ' '.join(map(
                                 lambda x: '{:.4f}'.format(x),

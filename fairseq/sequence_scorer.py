@@ -66,10 +66,7 @@ class SequenceScorer(object):
                 curr_prob = model.get_normalized_probs(bd, log_probs=len(models) == 1, sample=sample).data
                 bsz, tsz, vb = curr_prob.shape
                 if self.summarize_softmax_distribution is not None:
-                    print('Appending...')
-                    _ = self._summarize_softmax(curr_prob, bsz, tsz, self.summarize_softmax_distribution)
-                    print(_)
-                    softmax_distribution.extend(_)
+                    softmax_distribution.extend(self._summarize_softmax(curr_prob, bsz, tsz, self.summarize_softmax_distribution))
                 if is_single:
                     probs = gather_target_probs(curr_prob, orig_target)
                 else:
@@ -101,9 +98,6 @@ class SequenceScorer(object):
                 avg_attn.div_(len(models))
 
         bsz = avg_probs.size(0)
-        print(bsz)
-        print(len(softmax_distribution))
-        print(len(softmax_distribution[0]))
         hypos = []
         start_idxs = sample['start_indices'] if 'start_indices' in sample else [0] * bsz
         for i in range(bsz):
