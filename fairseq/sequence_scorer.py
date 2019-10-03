@@ -72,7 +72,7 @@ class SequenceScorer(object):
                         proba_copy = curr_prob[i][t].cpu()
                         torch.save(proba_copy, '/tmp/probas.pt')
                         entrops.append(entropy(proba_copy))
-                        print(proba_copy.std().numpy().shape)
+                        print(proba_copy.std().numpy().tolist())
                         stds.append(proba_copy.std().numpy())
                         vars.append(proba_copy.var().numpy())
                 print(entrops)
