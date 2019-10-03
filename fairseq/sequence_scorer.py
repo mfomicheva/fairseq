@@ -69,7 +69,7 @@ class SequenceScorer(object):
                     print('Appending...')
                     _ = self._summarize_softmax(curr_prob, bsz, tsz, self.summarize_softmax_distribution)
                     print(_)
-                    softmax_distribution.append(_)
+                    softmax_distribution.extend(_)
                 if is_single:
                     probs = gather_target_probs(curr_prob, orig_target)
                 else:
@@ -143,7 +143,9 @@ class SequenceScorer(object):
                 raise ValueError
         output = []
         for i in range(bsz):
+            segment_output = []
             for t in range(tsz):
                 proba_copy = softmax_probas[i][t].cpu()
-                output.append(_step(proba_copy))
+                segment_output.append(_step(proba_copy))
+            output.append(segment_output)
         return output
