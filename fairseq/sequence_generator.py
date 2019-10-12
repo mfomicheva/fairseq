@@ -5,6 +5,7 @@
 
 import math
 
+import numpy as np
 import torch
 
 from fairseq import search
@@ -31,6 +32,7 @@ class SequenceGenerator(object):
         diverse_beam_strength=0.5,
         match_source_len=False,
         no_repeat_ngram_size=0,
+        save_encoder_out=None
     ):
         """Generates translations of a given source sentence.
 
@@ -81,6 +83,7 @@ class SequenceGenerator(object):
         self.temperature = temperature
         self.match_source_len = match_source_len
         self.no_repeat_ngram_size = no_repeat_ngram_size
+        self.save_encoder_out = save_encoder_out
 
         assert sampling_topk < 0 or sampling, '--sampling-topk requires --sampling'
         assert sampling_topp < 0 or sampling, '--sampling-topp requires --sampling'
@@ -142,8 +145,26 @@ class SequenceGenerator(object):
                 model.max_decoder_positions() - 1,
             )
 
+        def save_encoder_output(encoder_outs, outfh):  # T x B x C
+            encoder_output = encoder_outs[0]['encoder_out']
+            encoder_output = encoder_output.transpose(0, 1)  # B x T x C
+            padding = encoder_outs[0]['encoder_padding_mask']
+            lengths = len(padding[1]) - padding.sum(dim=1)
+            lengths = lengths.unsqueeze(1)
+            lengths = lengths.repeat(1, 512)
+            lengths = lengths.type(torch.FloatTensor)
+            encoder_output[padding] = 0
+            encoder_sum = torch.sum(encoder_output, dim=1)
+            encoder_sum = torch.div(encoder_sum, lengths)
+            np.save(outfh, encoder_sum.cpu())
+
         # compute the encoder output for each beam
         encoder_outs = model.forward_encoder(encoder_input)
+        if self.save_encoder_out:
+            outfh = open(self.save_encoder_out, 'ab')
+            save_encoder_output(encoder_outs, outfh)
+            outfh.close()
+
         new_order = torch.arange(bsz).view(-1, 1).repeat(1, beam_size).view(-1)
         new_order = new_order.to(src_tokens.device).long()
         encoder_outs = model.reorder_encoder_out(encoder_outs, new_order)

@@ -492,6 +492,8 @@ def add_generation_args(parser):
                        help='strength of diversity penalty for Diverse Beam Search')
     group.add_argument('--print-alignment', action='store_true',
                        help='if set, uses attention feedback to compute and print alignment to source tokens')
+    group.add_argument('--save-encoder-out', required=False, default=None, type=str,
+                       help='path to file where to save encoder hidden states')
     # fmt: on
     return group
 
