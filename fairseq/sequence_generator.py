@@ -150,9 +150,10 @@ class SequenceGenerator(object):
             encoder_output = encoder_output.transpose(0, 1)  # B x T x C
             padding = encoder_outs[0]['encoder_padding_mask']
             lengths = len(padding[1]) - padding.sum(dim=1)
+            lengths = lengths.clone().detach()
             lengths = lengths.unsqueeze(1)
             lengths = lengths.repeat(1, 512)
-            lengths = lengths.type(torch.FloatTensor, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
+            lengths = lengths.type(torch.FloatTensor)  #
             encoder_output[padding] = 0
             encoder_sum = torch.sum(encoder_output, dim=1)
             encoder_sum = torch.div(encoder_sum, lengths)
