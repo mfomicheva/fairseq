@@ -147,13 +147,14 @@ class SequenceGenerator(object):
             )
 
         def save_encoder_output(encoder_outs, outfh):  # T x B x C
+            bd = encoder_outs[0]['encoder_out'].shape[1]
             encoder_output = encoder_outs[0]['encoder_out']
             encoder_output = encoder_output.transpose(0, 1)  # B x T x C
             padding = encoder_outs[0]['encoder_padding_mask']
             if padding is not None:
                 lengths = len(padding[1]) - padding.sum(dim=1)
             else:
-                lengths = 1
+                lengths = torch.ones(bd)
             lengths = lengths.unsqueeze(1)
             lengths = lengths.repeat(1, 512)
             lengths = lengths.type(torch.FloatTensor)
