@@ -84,6 +84,7 @@ class SequenceGenerator(object):
         self.match_source_len = match_source_len
         self.no_repeat_ngram_size = no_repeat_ngram_size
         self.save_encoder_out = save_encoder_out
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
         assert sampling_topk < 0 or sampling, '--sampling-topk requires --sampling'
         assert sampling_topp < 0 or sampling, '--sampling-topp requires --sampling'
@@ -150,13 +151,13 @@ class SequenceGenerator(object):
             encoder_output = encoder_output.transpose(0, 1)  # B x T x C
             padding = encoder_outs[0]['encoder_padding_mask']
             lengths = len(padding[1]) - padding.sum(dim=1)
-            lengths = lengths.clone().detach()
             lengths = lengths.unsqueeze(1)
             lengths = lengths.repeat(1, 512)
             lengths = lengths.type(torch.FloatTensor)
+            lengths = lengths.to(self.device)
             encoder_output[padding] = 0
             encoder_sum = torch.sum(encoder_output, dim=1)
-#            encoder_sum = torch.div(encoder_sum, lengths)
+            encoder_sum = torch.div(encoder_sum, lengths)
             np.save(outfh, encoder_sum.cpu())
 
         # compute the encoder output for each beam
