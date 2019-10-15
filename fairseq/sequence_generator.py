@@ -6,6 +6,8 @@
 import math
 
 import numpy as np
+import os
+import sys
 import torch
 
 from fairseq import search
@@ -167,6 +169,9 @@ class SequenceGenerator(object):
         # compute the encoder output for each beam
         encoder_outs = model.forward_encoder(encoder_input)
         if self.save_encoder_out:
+            if os.path.exists(self.save_encoder_out):
+                print('Fatal error! File %s exists. Remove file.' % self.save_encoder_out)
+                sys.exit(1)
             outfh = open(self.save_encoder_out, 'ab')
             save_encoder_output(encoder_outs, outfh)
             outfh.close()
