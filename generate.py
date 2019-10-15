@@ -7,6 +7,7 @@
 Translate pre-processed data with a trained model.
 """
 
+import os
 import torch
 
 from fairseq import bleu, checkpoint_utils, options, progress_bar, tasks, utils
@@ -19,6 +20,9 @@ def main(args):
         '--sampling requires --nbest to be equal to --beam'
     assert args.replace_unk is None or args.raw_text, \
         '--replace-unk requires a raw text dataset (--raw-text)'
+
+    if args.save_encoder_out is not None:
+        assert not os.path.exists(args.save_encoder_out)
 
     utils.import_user_module(args)
 
