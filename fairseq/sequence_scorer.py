@@ -4,19 +4,24 @@
 # LICENSE file in the root directory of this source tree.
 
 import torch
+import numpy as np
 import sys
 
 from fairseq import utils
 from scipy.stats import entropy
+from matplotlib import pyplot
 
 
 class SequenceScorer(object):
     """Scores the target for a given source sentence."""
 
-    def __init__(self, tgt_dict, softmax_batch=None, summarize_softmax_distribution=None):
+    def __init__(self, tgt_dict, softmax_batch=None, summarize_softmax_distribution=None, plot_softmax=None):
         self.pad = tgt_dict.pad()
         self.softmax_batch = softmax_batch or sys.maxsize
         self.summarize_softmax_distribution = summarize_softmax_distribution
+        self.plot_softmax = plot_softmax
+        self.n_plot = 0
+        self.max_plot = 10
         assert self.softmax_batch > 0
 
     @torch.no_grad()
@@ -65,7 +70,7 @@ class SequenceScorer(object):
                 curr_prob = model.get_normalized_probs(bd, log_probs=len(models) == 1, sample=sample).data
                 bsz, tsz, vb = curr_prob.shape
                 if self.summarize_softmax_distribution is not None:
-                    softmax_distribution.extend(self._summarize_softmax(curr_prob, bsz, tsz, self.summarize_softmax_distribution))
+                    softmax_distribution.extend(self._summarize_softmax(curr_prob, bsz, tgt, self.summarize_softmax_distribution, plot_softmax=self.plot_softmax))
                 if is_single:
                     probs = gather_target_probs(curr_prob, orig_target)
                 else:
@@ -124,22 +129,35 @@ class SequenceScorer(object):
             hypos.append([res])
         return hypos
 
-    @staticmethod
-    def _summarize_softmax(softmax_probas, bsz, tsz, method):
+    def _summarize_softmax(self, softmax_probas, bsz, tgt_idxs, method, plot_softmax=None):
         def _step(step_probas):
             if method == 'std':
                 return step_probas.numpy().std()
             elif method == 'var':
                 return step_probas.numpy().var()
             elif method == 'entr':
-                return entropy(step_probas)
+                return entropy(np.exp(step_probas))
             else:
                 raise ValueError
         output = []
         for i in range(bsz):
+            plot = False
+            if plot_softmax and not self.n_plot > self.max_plot:
+                plot = True
+                self.n_plot += 1
             segment_output = []
-            for t in range(tsz):
+            for t, idx in enumerate(tgt_idxs[i]):
+                if idx == 1:  # ignore padding
+                    continue
                 proba_copy = softmax_probas[i][t].cpu()
                 segment_output.append(_step(proba_copy))
+                if plot:
+                    self._plot_softmax(proba_copy, self.n_plot, t, self.plot_softmax)
             output.append(segment_output)
         return output
+
+    @staticmethod
+    def _plot_softmax(probas, sent_num, word_num, prefix):
+        pyplot.hist(probas, bins=50)
+        pyplot.savefig('{}.sent{}.word{}.png'.format(prefix, sent_num, word_num))
+        pyplot.clf()

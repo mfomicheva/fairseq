@@ -185,7 +185,11 @@ class FairseqTask(object):
     def build_generator(self, args):
         if getattr(args, 'score_reference', False):
             from fairseq.sequence_scorer import SequenceScorer
-            return SequenceScorer(self.target_dictionary, summarize_softmax_distribution=getattr(args, 'summarize_softmax', None))
+            return SequenceScorer(
+                self.target_dictionary,
+                summarize_softmax_distribution=getattr(args, 'summarize_softmax', None),
+                plot_softmax=getattr(args, 'plot_softmax', None),
+            )
         else:
             from fairseq.sequence_generator import SequenceGenerator
             return SequenceGenerator(
