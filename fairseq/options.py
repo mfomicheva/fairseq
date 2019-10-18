@@ -494,6 +494,8 @@ def add_generation_args(parser):
                        help='if set, uses attention feedback to compute and print alignment to source tokens')
     group.add_argument('--summarize-softmax', choices=['std', 'var', 'entr'], required=False, default=None,
                        help='if set, print specified statistic of softmax distribution')
+    group.add_argument('--plot-softmax', required=False, default=None,
+                       help='prefix to save plot of softmax distribution for first 10 sentences')
     # fmt: on
     return group
 
