@@ -22,7 +22,7 @@ def main(args):
         '--replace-unk requires a raw text dataset (--raw-text)'
 
     if args.save_encoder_out is not None:
-        assert not os.path.exists(args.save_encoder_out)
+        assert not os.path.exists(args.save_encoder_out + '.npy')
 
     utils.import_user_module(args)
 

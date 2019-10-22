@@ -146,7 +146,7 @@ class SequenceGenerator(object):
                 model.max_decoder_positions() - 1,
             )
 
-        def save_encoder_output(encoder_outs, outfh):  # T x B x C
+        def save_encoder_output(encoder_outs, outfh, outidx_fh):  # T x B x C
             bd = encoder_outs[0]['encoder_out'].shape[1]
             encoder_output = encoder_outs[0]['encoder_out']
             encoder_output = encoder_output.transpose(0, 1)  # B x T x C
@@ -162,15 +162,18 @@ class SequenceGenerator(object):
             encoder_output[padding] = 0
             encoder_sum = torch.sum(encoder_output, dim=1)
             encoder_sum = torch.div(encoder_sum, lengths)
-            indexes = np.argsort(sample['id'])
-            encoder_sum = encoder_sum[indexes]
+            #indexes = np.argsort(sample['id'])
+            #encoder_sum = encoder_sum[indexes]
+            print(sample['id'])
             np.save(outfh, encoder_sum.cpu())
+            np.save(outidx_fh, sample['id'])
 
         # compute the encoder output for each beam
         encoder_outs = model.forward_encoder(encoder_input)
         if self.save_encoder_out:
-            outfh = open(self.save_encoder_out, 'ab')
-            save_encoder_output(encoder_outs, outfh)
+            outfh = open(self.save_encoder_out + '.npy', 'ab')
+            outidx_fh = open(self.save_encoder_out + '.idx.npy', 'ab')
+            save_encoder_output(encoder_outs, outfh, outidx_fh)
             outfh.close()
 
         new_order = torch.arange(bsz).view(-1, 1).repeat(1, beam_size).view(-1)
