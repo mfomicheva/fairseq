@@ -162,11 +162,8 @@ class SequenceGenerator(object):
             encoder_output[padding] = 0
             encoder_sum = torch.sum(encoder_output, dim=1)
             encoder_sum = torch.div(encoder_sum, lengths)
-            #indexes = np.argsort(sample['id'])
-            #encoder_sum = encoder_sum[indexes]
-            print(sample['id'])
             np.save(outfh, encoder_sum.cpu())
-            np.save(outidx_fh, sample['id'])
+            np.save(outidx_fh, sample['id'].cpu())
 
         # compute the encoder output for each beam
         encoder_outs = model.forward_encoder(encoder_input)
