@@ -165,7 +165,7 @@ class SequenceGenerator(object):
             lengths = np.reshape(lengths, (bd, dim))
             encoder_output[padding] = 0
             encoder_sum = np.ndarray.sum(encoder_output, axis=1)
-            encoder_sum = np.divide(encoder_sum, lengths)
+            encoder_sum = np.divide(encoder_sum, lengths, dtype=np.float32)
             np.save(outfh, encoder_sum[:, :10])
             np.save(outidx_fh, sample_ids)
 
