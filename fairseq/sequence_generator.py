@@ -151,9 +151,10 @@ class SequenceGenerator(object):
             sample_ids = sample_ids.cpu().detach().numpy()
             bd = encoder_outs[0]['encoder_out'].shape[1]
             dim = encoder_outs[0]['encoder_out'].shape[2]
+            time = encoder_outs[0]['encoder_out'].shape[0]
             encoder_output = encoder_outs[0]['encoder_out']
             encoder_output = encoder_output.cpu().detach().numpy()
-            encoder_output = encoder_output.transpose(0, 1)  # B x T x C
+            encoder_output = encoder_output.reshape(bd, time, dim)  # B x T x C
             padding = encoder_outs[0]['encoder_padding_mask']
             if padding is not None:
                 padding = padding.cpu().detach().numpy()
