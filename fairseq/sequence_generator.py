@@ -166,7 +166,7 @@ class SequenceGenerator(object):
             encoder_output[padding] = 0
             encoder_sum = np.ndarray.sum(encoder_output, axis=1)
             encoder_sum = np.divide(encoder_sum, lengths, dtype=np.float32)
-            np.save(outfh, encoder_sum[:, :10])
+            np.save(outfh, encoder_sum)
             np.save(outidx_fh, sample_ids)
 
         # compute the encoder output for each beam
