@@ -154,18 +154,18 @@ class SequenceGenerator(object):
             encoder_output = encoder_outs[0]['encoder_out']
             encoder_output = encoder_output.transpose(0, 1)  # B x T x C
             encoder_output = encoder_output.cpu().detach().numpy()
-            padding = encoder_outs[0]['encoder_padding_mask']
-            if padding is not None:
-                padding = padding.cpu().detach().numpy()
-                lengths = len(padding[1]) - padding.sum(axis=1)
-            else:
-                lengths = np.ones(bd)
-            lengths = np.repeat(lengths, dim)
-            lengths = np.reshape(lengths, (bd, dim))
-            encoder_output[padding] = 0
+            #padding = encoder_outs[0]['encoder_padding_mask']
+            #if padding is not None:
+            #    padding = padding.cpu().detach().numpy()
+            #    lengths = len(padding[1]) - padding.sum(axis=1)
+            #else:
+            #    lengths = np.ones(bd)
+            #lengths = np.repeat(lengths, dim)
+            #lengths = np.reshape(lengths, (bd, dim))
+            #encoder_output[padding] = 0
             encoder_sum = np.ndarray.sum(encoder_output, axis=1)
-            encoder_sum = np.divide(encoder_sum, lengths)
-            np.save(outfh, encoder_sum[:, :10])
+            #encoder_sum = np.divide(encoder_sum, lengths)
+            np.save(outfh, encoder_sum)
             np.save(outidx_fh, sample_ids)
 
         # compute the encoder output for each beam
