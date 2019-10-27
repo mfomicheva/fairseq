@@ -147,10 +147,9 @@ class SequenceGenerator(object):
             )
 
         def save_encoder_output(encoder_outs, outfh, outidx_fh):  # T x B x C
-            print(sample['id'])
-            if 'id' in sample:
-                sample_ids = sample['id']
-                sample_ids = sample_ids.cpu().detach().numpy()
+            assert 'id' in sample
+            sample_ids = sample['id']
+            sample_ids = sample_ids.cpu().detach().numpy()
             bd = encoder_outs[0]['encoder_out'].shape[1]
             dim = encoder_outs[0]['encoder_out'].shape[2]
             time = encoder_outs[0]['encoder_out'].shape[0]
@@ -170,8 +169,7 @@ class SequenceGenerator(object):
             encoder_sum = np.ndarray.sum(encoder_output, axis=1)
             encoder_sum = np.divide(encoder_sum, lengths, dtype=np.float32)
             np.save(outfh, encoder_sum)
-            if 'id' in sample:
-                np.save(outidx_fh, sample_ids)
+            np.save(outidx_fh, sample_ids)
 
         # compute the encoder output for each beam
         encoder_outs = model.forward_encoder(encoder_input)
