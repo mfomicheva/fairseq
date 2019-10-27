@@ -147,27 +147,31 @@ class SequenceGenerator(object):
             )
 
         def save_encoder_output(encoder_outs, outfh, outidx_fh):  # T x B x C
-            sample_ids = sample['id']
-            sample_ids = sample_ids.cpu().detach().numpy()
+            print(sample['id'])
+            if 'id' in sample:
+                sample_ids = sample['id']
+                sample_ids = sample_ids.cpu().detach().numpy()
             bd = encoder_outs[0]['encoder_out'].shape[1]
             dim = encoder_outs[0]['encoder_out'].shape[2]
             time = encoder_outs[0]['encoder_out'].shape[0]
             encoder_output = encoder_outs[0]['encoder_out']
+            encoder_output = encoder_output.transpose(0, 1)  # B x T x C
             encoder_output = encoder_output.cpu().detach().numpy()
-            encoder_output = encoder_output.reshape(bd, time, dim)  # B x T x C
             padding = encoder_outs[0]['encoder_padding_mask']
             if padding is not None:
                 padding = padding.cpu().detach().numpy()
                 lengths = len(padding[1]) - padding.sum(axis=1)
+                encoder_output[padding] = 0
             else:
-                lengths = np.ones(bd)
+                lengths = np.asarray(time)
+                lengths = np.repeat(lengths, bd)
             lengths = np.repeat(lengths, dim)
             lengths = np.reshape(lengths, (bd, dim))
-            encoder_output[padding] = 0
             encoder_sum = np.ndarray.sum(encoder_output, axis=1)
             encoder_sum = np.divide(encoder_sum, lengths, dtype=np.float32)
             np.save(outfh, encoder_sum)
-            np.save(outidx_fh, sample_ids)
+            if 'id' in sample:
+                np.save(outidx_fh, sample_ids)
 
         # compute the encoder output for each beam
         encoder_outs = model.forward_encoder(encoder_input)
