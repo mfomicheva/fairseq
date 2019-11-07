@@ -288,7 +288,7 @@ class SequenceGenerator(object):
                 model.reorder_incremental_state(reorder_state)
                 encoder_outs = model.reorder_encoder_out(encoder_outs, reorder_state)
 
-            lprobs, avg_attn_scores = model.forward_decoder(
+            lprobs, avg_attn_scores = model.forward_decoder(  # By default encoder-decoder attention from the last decoder layer (averaged over heads)
                 tokens[:, :step + 1], encoder_outs, temperature=self.temperature,
             )
 
