@@ -474,6 +474,8 @@ def add_generation_args(parser):
                        help='just score the reference translation')
     group.add_argument('--retain-dropout', action='store_true',
                        help='Apply dropout at inference time')
+    group.add_argument('--retain-dropout-embed', action='store_true',
+                       help='Apply dropout at inference time for embedding layers')
     group.add_argument('--prefix-size', default=0, type=int, metavar='PS',
                        help='initialize generation by target prefix of given length')
     group.add_argument('--no-repeat-ngram-size', default=0, type=int, metavar='N',
