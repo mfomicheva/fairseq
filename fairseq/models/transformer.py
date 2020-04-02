@@ -327,7 +327,7 @@ class TransformerDecoder(FairseqIncrementalDecoder):
         self.register_buffer('version', torch.Tensor([3]))
 
         self.dropout = args.dropout
-        self.retain_dropout = args.retain_dropout
+        self.retain_dropout_embed = args.retain_dropout_embed
         self.share_input_output_embed = args.share_decoder_input_output_embed
 
         input_embed_dim = embed_tokens.embedding_dim
