@@ -23,6 +23,7 @@ class SequenceGenerator(object):
         len_penalty=1.,
         unk_penalty=0.,
         retain_dropout=False,
+        retain_dropout_embed=False,
         sampling=False,
         sampling_topk=-1,
         sampling_topp=-1.0,
@@ -78,6 +79,7 @@ class SequenceGenerator(object):
         self.len_penalty = len_penalty
         self.unk_penalty = unk_penalty
         self.retain_dropout = retain_dropout
+        self.retain_dropout_embed = retain_dropout_embed
         self.temperature = temperature
         self.match_source_len = match_source_len
         self.no_repeat_ngram_size = no_repeat_ngram_size
@@ -116,7 +118,7 @@ class SequenceGenerator(object):
         """
 
         model = EnsembleModel(models)
-        if not self.retain_dropout:
+        if not (self.retain_dropout or self.retain_dropout_embed):
             model.eval()
 
         # model.forward normally channels prev_output_tokens into the decoder

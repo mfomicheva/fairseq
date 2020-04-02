@@ -143,7 +143,8 @@ def load_checkpoint_to_cpu(path, arg_overrides=None):
     return state
 
 
-def load_model_ensemble(filenames, arg_overrides=None, task=None, retain_dropout=False):
+def load_model_ensemble(
+        filenames, arg_overrides=None, task=None, retain_dropout=False, retain_dropout_embed=False):
     """Loads an ensemble of models.
 
     Args:
@@ -152,11 +153,14 @@ def load_model_ensemble(filenames, arg_overrides=None, task=None, retain_dropout
             were used during model training
         task (fairseq.tasks.FairseqTask, optional): task to use for loading
     """
-    ensemble, args, _task = load_model_ensemble_and_task(filenames, arg_overrides, task, retain_dropout=retain_dropout)
+    ensemble, args, _task = load_model_ensemble_and_task(
+        filenames, arg_overrides, task, retain_dropout=retain_dropout,
+        retain_dropout_embed=retain_dropout_embed)
     return ensemble, args
 
 
-def load_model_ensemble_and_task(filenames, arg_overrides=None, task=None, retain_dropout=False):
+def load_model_ensemble_and_task(
+        filenames, arg_overrides=None, task=None, retain_dropout=False, retain_dropout_embed=False):
     from fairseq import tasks
 
     ensemble = []
@@ -170,7 +174,8 @@ def load_model_ensemble_and_task(filenames, arg_overrides=None, task=None, retai
             task = tasks.setup_task(args)
 
         # build model for ensemble
-        args.retain_dropout=retain_dropout
+        args.retain_dropout = retain_dropout
+        args.retain_dropout_embed = retain_dropout_embed
         model = task.build_model(args)
         model.load_state_dict(state['model'], strict=True)
         ensemble.append(model)
