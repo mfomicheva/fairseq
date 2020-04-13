@@ -114,6 +114,7 @@ class SequenceGenerator(object):
             prefix_tokens (torch.LongTensor, optional): force decoder to begin
                 with these tokens
         """
+
         model = EnsembleModel(models)
         if not self.retain_dropout:
             model.eval()
