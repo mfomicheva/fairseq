@@ -176,6 +176,15 @@ def main(args):
                         else:
                             scorer.add(target_tokens, hypo_tokens)
 
+                    if 'positional_statistics' in hypo:
+                        print('D-{}\t{}'.format(
+                            sample_id,
+                            ' '.join(map(
+                                lambda x: '{:.4f}'.format(x),
+                                hypo['positional_statistics'],
+                            ))
+                        ))
+
             wps_meter.update(num_generated_tokens)
             t.log({'wps': round(wps_meter.avg)})
             num_sentences += sample['nsentences']

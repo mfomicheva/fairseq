@@ -257,7 +257,6 @@ class SequenceGenerator(object):
                     else:
                         hypo_attn = None
                         alignment = None
-
                     return {
                         'tokens': tokens_clone[i],
                         'score': score,

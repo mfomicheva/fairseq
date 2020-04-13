@@ -4,17 +4,24 @@
 # LICENSE file in the root directory of this source tree.
 
 import torch
+import numpy as np
 import sys
 
 from fairseq import utils
+from scipy.stats import entropy
+from matplotlib import pyplot
 
 
 class SequenceScorer(object):
     """Scores the target for a given source sentence."""
 
-    def __init__(self, tgt_dict, softmax_batch=None):
+    def __init__(self, tgt_dict, softmax_batch=None, summarize_softmax_distribution=None, plot_softmax=None):
         self.pad = tgt_dict.pad()
         self.softmax_batch = softmax_batch or sys.maxsize
+        self.summarize_softmax_distribution = summarize_softmax_distribution
+        self.plot_softmax = plot_softmax
+        self.n_plot = 0
+        self.max_plot = 10
         assert self.softmax_batch > 0
 
     @torch.no_grad()
@@ -49,6 +56,7 @@ class SequenceScorer(object):
         # compute scores for each model in the ensemble
         avg_probs = None
         avg_attn = None
+        softmax_distribution = []
         for model in models:
             model.eval()
             decoder_out = model.forward(**net_input)
@@ -56,9 +64,13 @@ class SequenceScorer(object):
 
             batched = batch_for_softmax(decoder_out, orig_target)
             probs, idx = None, 0
+            softmax_distribution = []
             for bd, tgt, is_single in batched:
                 sample['target'] = tgt
                 curr_prob = model.get_normalized_probs(bd, log_probs=len(models) == 1, sample=sample).data
+                bsz, tsz, vb = curr_prob.shape
+                if self.summarize_softmax_distribution is not None:
+                    softmax_distribution.extend(self._summarize_softmax(curr_prob, bsz, tgt, self.summarize_softmax_distribution, plot_softmax=self.plot_softmax))
                 if is_single:
                     probs = gather_target_probs(curr_prob, orig_target)
                 else:
@@ -104,11 +116,48 @@ class SequenceScorer(object):
                 _, alignment = avg_attn_i.max(dim=0)
             else:
                 avg_attn_i = alignment = None
-            hypos.append([{
+            res = {
                 'tokens': ref,
                 'score': score_i,
                 'attention': avg_attn_i,
                 'alignment': alignment,
                 'positional_scores': avg_probs_i,
-            }])
+            }
+            if softmax_distribution:
+                softmax_distribution_i = softmax_distribution[i][start_idxs[i]:start_idxs[i] + tgt_len]
+                res.update({'positional_statistics': softmax_distribution_i})
+            hypos.append([res])
         return hypos
+
+    def _summarize_softmax(self, softmax_probas, bsz, tgt_idxs, method, plot_softmax=None):
+        def _step(step_probas):
+            if method == 'std':
+                return step_probas.numpy().std()
+            elif method == 'var':
+                return step_probas.numpy().var()
+            elif method == 'entr':
+                return entropy(np.exp(step_probas))
+            else:
+                raise ValueError
+        output = []
+        for i in range(bsz):
+            plot = False
+            if plot_softmax and not self.n_plot > self.max_plot:
+                plot = True
+                self.n_plot += 1
+            segment_output = []
+            for t, idx in enumerate(tgt_idxs[i]):
+                if idx == 1:  # ignore padding
+                    continue
+                proba_copy = softmax_probas[i][t].cpu()
+                segment_output.append(_step(proba_copy))
+                if plot:
+                    self._plot_softmax(proba_copy, self.n_plot, t, self.plot_softmax)
+            output.append(segment_output)
+        return output
+
+    @staticmethod
+    def _plot_softmax(probas, sent_num, word_num, prefix):
+        pyplot.hist(probas, bins=50)
+        pyplot.savefig('{}.sent{}.word{}.png'.format(prefix, sent_num, word_num))
+        pyplot.clf()
