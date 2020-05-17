@@ -115,7 +115,9 @@ class SequenceGenerator(object):
                 with these tokens
         """
         model = EnsembleModel(models)
-        if not self.retain_dropout:
+        if self.retain_dropout:
+            model.train()
+        else:
             model.eval()
 
         # model.forward normally channels prev_output_tokens into the decoder

@@ -120,13 +120,8 @@ class BaseFairseqModel(nn.Module):
 
         self.apply(apply_make_generation_fast_)
 
-        def train(mode=True):
-            if mode:
-                raise RuntimeError('cannot train after make_generation_fast')
-
         # this model should no longer be used for training
         self.eval()
-        self.train = train
 
     def prepare_for_onnx_export_(self, **kwargs):
         """Make model exportable via ONNX trace."""

@@ -51,7 +51,9 @@ class SequenceScorer(object):
         avg_probs = None
         avg_attn = None
         for model in models:
-            if not self.retain_dropout:
+            if self.retain_dropout:
+                model.train()
+            else:
                 model.eval()
             decoder_out = model.forward(**net_input)
             attn = decoder_out[1]
