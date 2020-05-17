@@ -185,7 +185,7 @@ class FairseqTask(object):
     def build_generator(self, args):
         if getattr(args, 'score_reference', False):
             from fairseq.sequence_scorer import SequenceScorer
-            return SequenceScorer(self.target_dictionary)
+            return SequenceScorer(self.target_dictionary, retain_dropout=getattr(args, 'retain_dropout', False))
         else:
             from fairseq.sequence_generator import SequenceGenerator
             return SequenceGenerator(
