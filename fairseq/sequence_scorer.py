@@ -12,9 +12,10 @@ from fairseq import utils
 class SequenceScorer(object):
     """Scores the target for a given source sentence."""
 
-    def __init__(self, tgt_dict, softmax_batch=None):
+    def __init__(self, tgt_dict, softmax_batch=None, retain_dropout=False):
         self.pad = tgt_dict.pad()
         self.softmax_batch = softmax_batch or sys.maxsize
+        self.retain_dropout = retain_dropout
         assert self.softmax_batch > 0
 
     @torch.no_grad()
@@ -50,7 +51,8 @@ class SequenceScorer(object):
         avg_probs = None
         avg_attn = None
         for model in models:
-            model.eval()
+            if not self.retain_dropout:
+                model.eval()
             decoder_out = model.forward(**net_input)
             attn = decoder_out[1]
 
