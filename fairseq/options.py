@@ -493,7 +493,7 @@ def add_generation_args(parser):
     group.add_argument('--retain-dropout', action='store_true',
                        help='Use dropout at inference time')
     group.add_argument('--retain-dropout-modules', default=None, nargs='+', type=str,
-                       help='Use dropout at inference time for specific modules.')
+                       help='Use dropout at inference time only for specific modules.')
     # fmt: on
     return group
 
