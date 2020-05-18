@@ -104,11 +104,13 @@ class BaseFairseqModel(nn.Module):
 
         do_upgrade(self, name)
 
-    def set_inference_dropout(self):
+    def set_inference_dropout(self, module_names=None):
 
         seen = set()
 
         def set_inference_dropout_module(module):
+            if module_names is not None and type(module).__name__ not in module_names:
+                return
             if module != self and hasattr(module, 'apply_dropout') \
                     and module not in seen:
                 seen.add(module)
