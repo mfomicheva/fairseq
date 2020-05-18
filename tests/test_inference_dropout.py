@@ -3,10 +3,10 @@ import unittest
 import tests.utils as test_utils
 import torch
 
-from fairseq.modules.fairseq_module import FairseqModule
+from fairseq.modules.inference_dropout_module import InferenceDropoutModule
 
 
-class TestLayer(FairseqModule):
+class TestLayer(InferenceDropoutModule):
     pass
 
 

@@ -6,10 +6,10 @@
 import torch.nn as nn
 
 from fairseq import utils
-from fairseq.modules.fairseq_module import FairseqModule
+from fairseq.modules.inference_dropout_module import InferenceDropoutModule
 
 
-class FairseqDecoder(FairseqModule):
+class FairseqDecoder(InferenceDropoutModule):
     """Base class for decoders."""
 
     def __init__(self, dictionary):

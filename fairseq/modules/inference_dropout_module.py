@@ -1,8 +1,8 @@
 import torch.nn as nn
 
 
-class FairseqModule(nn.Module):
-    """Base class for any stand-alone module in fairseq."""
+class InferenceDropoutModule(nn.Module):
+    """Base class for modules that allow to apply dropout at inference time."""
 
     def __init__(self):
         super().__init__()

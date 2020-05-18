@@ -7,10 +7,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 from fairseq import utils
 from fairseq.modules import LayerNorm, MultiheadAttention
-from fairseq.modules.fairseq_module import FairseqModule
+from fairseq.modules.inference_dropout_module import InferenceDropoutModule
 
 
-class TransformerEncoderLayer(FairseqModule):
+class TransformerEncoderLayer(InferenceDropoutModule):
     """Encoder layer block.
 
     In the original paper each operation (multi-head attention or FFN) is
@@ -115,7 +115,7 @@ class TransformerEncoderLayer(FairseqModule):
             return x
 
 
-class TransformerDecoderLayer(FairseqModule):
+class TransformerDecoderLayer(InferenceDropoutModule):
     """Decoder layer block.
 
     In the original paper each operation (multi-head attention, encoder

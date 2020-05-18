@@ -9,10 +9,10 @@ from torch.nn import Parameter
 import torch.nn.functional as F
 
 from fairseq import utils
-from fairseq.modules.fairseq_module import FairseqModule
+from fairseq.modules.inference_dropout_module import InferenceDropoutModule
 
 
-class MultiheadAttention(FairseqModule):
+class MultiheadAttention(InferenceDropoutModule):
     """Multi-headed attention.
 
     See "Attention Is All You Need" for more details.
