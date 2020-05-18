@@ -243,7 +243,7 @@ class TransformerEncoder(FairseqEncoder):
         x = self.embed_scale * self.embed_tokens(src_tokens)
         if self.embed_positions is not None:
             x += self.embed_positions(src_tokens)
-        x = F.dropout(x, p=self.dropout, training=self.apply_dropout)
+        x = F.dropout(x, p=self.dropout, training=self.apply_dropout())
 
         # B x T x C -> T x B x C
         x = x.transpose(0, 1)
@@ -424,7 +424,7 @@ class TransformerDecoder(FairseqIncrementalDecoder):
 
         if positions is not None:
             x += positions
-        x = F.dropout(x, p=self.dropout, training=self.apply_dropout)
+        x = F.dropout(x, p=self.dropout, training=self.apply_dropout())
 
         # B x T x C -> T x B x C
         x = x.transpose(0, 1)

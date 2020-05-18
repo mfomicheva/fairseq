@@ -93,16 +93,16 @@ class TransformerEncoderLayer(FairseqModule):
         # TODO: to formally solve this problem, we need to change fairseq's
         # MultiheadAttention. We will do this later on.
         x, _ = self.self_attn(query=x, key=x, value=x, key_padding_mask=encoder_padding_mask)
-        x = F.dropout(x, p=self.dropout, training=self.apply_dropout)
+        x = F.dropout(x, p=self.dropout, training=self.apply_dropout())
         x = residual + x
         x = self.maybe_layer_norm(self.self_attn_layer_norm, x, after=True)
 
         residual = x
         x = self.maybe_layer_norm(self.final_layer_norm, x, before=True)
         x = self.activation_fn(self.fc1(x))
-        x = F.dropout(x, p=self.activation_dropout, training=self.apply_dropout)
+        x = F.dropout(x, p=self.activation_dropout, training=self.apply_dropout())
         x = self.fc2(x)
-        x = F.dropout(x, p=self.dropout, training=self.apply_dropout)
+        x = F.dropout(x, p=self.dropout, training=self.apply_dropout())
         x = residual + x
         x = self.maybe_layer_norm(self.final_layer_norm, x, after=True)
         return x
@@ -221,7 +221,7 @@ class TransformerDecoderLayer(FairseqModule):
             need_weights=False,
             attn_mask=self_attn_mask,
         )
-        x = F.dropout(x, p=self.dropout, training=self.apply_dropout)
+        x = F.dropout(x, p=self.dropout, training=self.apply_dropout())
         x = residual + x
         x = self.maybe_layer_norm(self.self_attn_layer_norm, x, after=True)
 
@@ -243,16 +243,16 @@ class TransformerDecoderLayer(FairseqModule):
                 static_kv=True,
                 need_weights=(not self.training and self.need_attn),
             )
-            x = F.dropout(x, p=self.dropout, training=self.apply_dropout)
+            x = F.dropout(x, p=self.dropout, training=self.apply_dropout())
             x = residual + x
             x = self.maybe_layer_norm(self.encoder_attn_layer_norm, x, after=True)
 
         residual = x
         x = self.maybe_layer_norm(self.final_layer_norm, x, before=True)
         x = self.activation_fn(self.fc1(x))
-        x = F.dropout(x, p=self.activation_dropout, training=self.apply_dropout)
+        x = F.dropout(x, p=self.activation_dropout, training=self.apply_dropout())
         x = self.fc2(x)
-        x = F.dropout(x, p=self.dropout, training=self.apply_dropout)
+        x = F.dropout(x, p=self.dropout, training=self.apply_dropout())
         x = residual + x
         x = self.maybe_layer_norm(self.final_layer_norm, x, after=True)
         if self.onnx_trace and incremental_state is not None:
