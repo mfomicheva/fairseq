@@ -23,9 +23,15 @@ class BaseFairseqModel(nn.Module):
     def __init__(self):
         super().__init__()
         self._is_generation_fast = False
+        self.apply_dropout = self.training
 
+    @property
     def apply_dropout(self):
-        return self.training
+        return self._apply_dropout
+
+    @apply_dropout.setter
+    def apply_dropout(self, apply):
+        self._apply_dropout = apply
 
     @staticmethod
     def add_args(parser):
@@ -100,16 +106,13 @@ class BaseFairseqModel(nn.Module):
 
     def set_inference_dropout(self):
 
-        def apply_dropout():
-            return True
-
         seen = set()
 
         def set_inference_dropout_module(module):
             if module != self and hasattr(module, 'apply_dropout') \
                     and module not in seen:
                 seen.add(module)
-                module.apply_dropout = apply_dropout
+                module.apply_dropout = True
 
         self.apply(set_inference_dropout_module)
 
