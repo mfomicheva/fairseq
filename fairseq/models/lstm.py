@@ -219,7 +219,7 @@ class LSTMEncoder(FairseqEncoder):
 
         # embed tokens
         x = self.embed_tokens(src_tokens)
-        x = F.dropout(x, p=self.dropout_in, training=self.training)
+        x = F.dropout(x, p=self.dropout_in, training=self.apply_dropout())
 
         # B x T x C -> T x B x C
         x = x.transpose(0, 1)
@@ -238,7 +238,7 @@ class LSTMEncoder(FairseqEncoder):
 
         # unpack outputs and apply dropout
         x, _ = nn.utils.rnn.pad_packed_sequence(packed_outs, padding_value=self.padding_value)
-        x = F.dropout(x, p=self.dropout_out, training=self.training)
+        x = F.dropout(x, p=self.dropout_out, training=self.apply_dropout())
         assert list(x.size()) == [seqlen, bsz, self.output_units]
 
         if self.bidirectional:
@@ -369,7 +369,7 @@ class LSTMDecoder(FairseqIncrementalDecoder):
 
         # embed tokens
         x = self.embed_tokens(prev_output_tokens)
-        x = F.dropout(x, p=self.dropout_in, training=self.training)
+        x = F.dropout(x, p=self.dropout_in, training=self.apply_dropout())
 
         # B x T x C -> T x B x C
         x = x.transpose(0, 1)
@@ -398,7 +398,7 @@ class LSTMDecoder(FairseqIncrementalDecoder):
                 hidden, cell = rnn(input, (prev_hiddens[i], prev_cells[i]))
 
                 # hidden state becomes the input to the next layer
-                input = F.dropout(hidden, p=self.dropout_out, training=self.training)
+                input = F.dropout(hidden, p=self.dropout_out, training=self.apply_dropout())
 
                 # save state for next time step
                 prev_hiddens[i] = hidden
@@ -409,7 +409,7 @@ class LSTMDecoder(FairseqIncrementalDecoder):
                 out, attn_scores[:, j, :] = self.attention(hidden, encoder_outs, encoder_padding_mask)
             else:
                 out = hidden
-            out = F.dropout(out, p=self.dropout_out, training=self.training)
+            out = F.dropout(out, p=self.dropout_out, training=self.apply_dropout())
 
             # input feeding
             input_feed = out
@@ -439,7 +439,7 @@ class LSTMDecoder(FairseqIncrementalDecoder):
         if self.adaptive_softmax is None:
             if hasattr(self, 'additional_fc'):
                 x = self.additional_fc(x)
-                x = F.dropout(x, p=self.dropout_out, training=self.training)
+                x = F.dropout(x, p=self.dropout_out, training=self.apply_dropout())
             if self.share_input_output_embed:
                 x = F.linear(x, self.embed_tokens.weight)
             else:
