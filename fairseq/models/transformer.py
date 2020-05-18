@@ -26,8 +26,6 @@ from fairseq.modules import (
     TransformerEncoderLayer,
 )
 
-from fairseq.modules.fairseq_module import FairseqModule
-
 DEFAULT_MAX_SOURCE_POSITIONS = 1024
 DEFAULT_MAX_TARGET_POSITIONS = 1024
 
