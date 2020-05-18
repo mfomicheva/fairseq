@@ -24,6 +24,9 @@ class BaseFairseqModel(nn.Module):
         super().__init__()
         self._is_generation_fast = False
 
+    def apply_dropout(self):
+        return self.training
+
     @staticmethod
     def add_args(parser):
         """Add model-specific arguments to the parser."""
@@ -94,6 +97,21 @@ class BaseFairseqModel(nn.Module):
                 do_upgrade(c, name)
 
         do_upgrade(self, name)
+
+    def set_inference_dropout(self):
+
+        def apply_dropout():
+            return True
+
+        seen = set()
+
+        def set_inference_dropout_module(module):
+            if module != self and hasattr(module, 'apply_dropout') \
+                    and module not in seen:
+                seen.add(module)
+                module.apply_dropout = apply_dropout
+
+        self.apply(set_inference_dropout_module)
 
     def make_generation_fast_(self, **kwargs):
         """Optimize model for faster generation."""
