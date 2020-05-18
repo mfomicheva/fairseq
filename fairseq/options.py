@@ -492,6 +492,8 @@ def add_generation_args(parser):
                        help='if set, uses attention feedback to compute and print alignment to source tokens')
     group.add_argument('--retain-dropout', action='store_true',
                        help='Use dropout at inference time')
+    group.add_argument('--retain-dropout-modules', default=None, nargs='+', type=str,
+                       help='Use dropout at inference time for specific modules.')
     # fmt: on
     return group
 
