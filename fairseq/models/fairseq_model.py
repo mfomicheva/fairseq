@@ -101,6 +101,8 @@ class BaseFairseqModel(nn.Module):
 
     def set_inference_dropout(self, module_names=None):
 
+        self.retain_dropout = True
+
         seen = set()
 
         def set_inference_dropout_module(module):
