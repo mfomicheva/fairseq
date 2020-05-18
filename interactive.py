@@ -11,6 +11,7 @@ from collections import namedtuple
 import fileinput
 
 import torch
+import numpy as np
 
 from fairseq import checkpoint_utils, options, tasks, utils
 from fairseq.data import encoders
@@ -68,6 +69,11 @@ def main(args):
         '--max-sentences/--batch-size cannot be larger than --buffer-size'
 
     print(args)
+
+    # Fix seed
+    if args.seed is not None:
+        np.random.seed(args.seed)
+        torch.manual_seed(args.seed)
 
     use_cuda = torch.cuda.is_available() and not args.cpu
 

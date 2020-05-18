@@ -8,6 +8,7 @@ Translate pre-processed data with a trained model.
 """
 
 import torch
+import numpy as np
 
 from fairseq import bleu, checkpoint_utils, options, progress_bar, tasks, utils
 from fairseq.meters import StopwatchMeter, TimeMeter
@@ -25,6 +26,11 @@ def main(args):
     if args.max_tokens is None and args.max_sentences is None:
         args.max_tokens = 12000
     print(args)
+
+    # Fix seed
+    if args.seed is not None:
+        np.random.seed(args.seed)
+        torch.manual_seed(args.seed)
 
     use_cuda = torch.cuda.is_available() and not args.cpu
 
