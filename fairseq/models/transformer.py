@@ -26,6 +26,8 @@ from fairseq.modules import (
     TransformerEncoderLayer,
 )
 
+from fairseq.modules.fairseq_module import FairseqModule
+
 DEFAULT_MAX_SOURCE_POSITIONS = 1024
 DEFAULT_MAX_TARGET_POSITIONS = 1024
 
@@ -241,7 +243,7 @@ class TransformerEncoder(FairseqEncoder):
         x = self.embed_scale * self.embed_tokens(src_tokens)
         if self.embed_positions is not None:
             x += self.embed_positions(src_tokens)
-        x = F.dropout(x, p=self.dropout, training=self.training)
+        x = F.dropout(x, p=self.dropout, training=self.apply_dropout)
 
         # B x T x C -> T x B x C
         x = x.transpose(0, 1)
@@ -422,7 +424,7 @@ class TransformerDecoder(FairseqIncrementalDecoder):
 
         if positions is not None:
             x += positions
-        x = F.dropout(x, p=self.dropout, training=self.training)
+        x = F.dropout(x, p=self.dropout, training=self.apply_dropout)
 
         # B x T x C -> T x B x C
         x = x.transpose(0, 1)

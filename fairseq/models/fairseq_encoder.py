@@ -5,8 +5,10 @@
 
 import torch.nn as nn
 
+from fairseq.modules.fairseq_module import FairseqModule
 
-class FairseqEncoder(nn.Module):
+
+class FairseqEncoder(FairseqModule):
     """Base class for encoders."""
 
     def __init__(self, dictionary):

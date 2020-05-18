@@ -9,9 +9,10 @@ from torch.nn import Parameter
 import torch.nn.functional as F
 
 from fairseq import utils
+from fairseq.modules.fairseq_module import FairseqModule
 
 
-class MultiheadAttention(nn.Module):
+class MultiheadAttention(FairseqModule):
     """Multi-headed attention.
 
     See "Attention Is All You Need" for more details.
@@ -242,7 +243,7 @@ class MultiheadAttention(nn.Module):
         attn_weights = utils.softmax(
             attn_weights, dim=-1, onnx_trace=self.onnx_trace,
         ).type_as(attn_weights)
-        attn_weights = F.dropout(attn_weights, p=self.dropout, training=self.training)
+        attn_weights = F.dropout(attn_weights, p=self.dropout, training=self.apply_dropout)
 
         attn = torch.bmm(attn_weights, v)
         assert list(attn.size()) == [bsz * self.num_heads, tgt_len, self.head_dim]
