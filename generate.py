@@ -50,7 +50,7 @@ def main(args):
     # Optimize ensemble for generation
     for model in models:
         if args.retain_dropout:
-            model.set_inference_dropout()
+            model.set_inference_dropout(args.retain_dropout_modules)
         model.make_generation_fast_(
             beamable_mm_beam_size=None if args.no_beamable_mm else args.beam,
             need_attn=args.print_alignment,
