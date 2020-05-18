@@ -8,6 +8,7 @@ Translate pre-processed data with a trained model.
 """
 
 import torch
+import numpy as np
 
 from fairseq import bleu, checkpoint_utils, options, progress_bar, tasks, utils
 from fairseq.meters import StopwatchMeter, TimeMeter
@@ -27,6 +28,11 @@ def main(args):
     print(args)
 
     use_cuda = torch.cuda.is_available() and not args.cpu
+
+    # Fix seed for stochastic decoding
+    if args.seed is not None:
+        np.random.seed(args.seed)
+        torch.manual_seed(args.seed)
 
     # Load dataset splits
     task = tasks.setup_task(args)
