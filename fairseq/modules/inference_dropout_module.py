@@ -8,5 +8,5 @@ class InferenceDropoutModule(nn.Module):
         super().__init__()
         self.retain_dropout = False
 
-    def apply_dropout(self):
+    def is_dropout_applied(self):
         return self.retain_dropout or self.training

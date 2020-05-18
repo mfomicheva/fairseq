@@ -25,7 +25,7 @@ class BaseFairseqModel(nn.Module):
         self._is_generation_fast = False
         self.retain_dropout = False
 
-    def apply_dropout(self):
+    def is_dropout_applied(self):
         return self.retain_dropout or self.training
 
     @staticmethod

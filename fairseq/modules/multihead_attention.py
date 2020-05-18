@@ -243,7 +243,7 @@ class MultiheadAttention(InferenceDropoutModule):
         attn_weights = utils.softmax(
             attn_weights, dim=-1, onnx_trace=self.onnx_trace,
         ).type_as(attn_weights)
-        attn_weights = F.dropout(attn_weights, p=self.dropout, training=self.apply_dropout())
+        attn_weights = F.dropout(attn_weights, p=self.dropout, training=self.is_dropout_applied())
 
         attn = torch.bmm(attn_weights, v)
         assert list(attn.size()) == [bsz * self.num_heads, tgt_len, self.head_dim]
