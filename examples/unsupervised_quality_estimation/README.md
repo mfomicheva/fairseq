@@ -72,9 +72,9 @@ sed -r 's/(@@ )| (@@ ?$)//g' < $TMP/mt.out | perl $MOSES_DECODER/scripts/tokeniz
 Make temporary files to store the translations repeated N times.
 
 ```
-python ${SCRIPTS}/scripts/uncertainty/repeat_translations.py -i $TMP/preprocessed.tok.bpe.$SRC_LANG -n $DROPOUT_N 
+python ${SCRIPTS}/scripts/uncertainty/repeat_lines.py -i $TMP/preprocessed.tok.bpe.$SRC_LANG -n $DROPOUT_N 
 -o $TMP/repeated.$SRC_LANG
-python ${SCRIPTS}/scripts/uncertainty/repeat_translations.py -i $TMP/mt.out -n $DROPOUT_N -o $TMP/repeated.$TGT_LANG
+python ${SCRIPTS}/scripts/uncertainty/repeat_lines.py -i $TMP/mt.out -n $DROPOUT_N -o $TMP/repeated.$TGT_LANG
 
 fairseq-preprocess --srcdict ${MODEL_DIR}/dict.${SRC_LANG}.txt $TGT_DIC --source-lang ${SRC_LANG} 
 --target-lang ${TGT_LANG} --testpref ${TMP}/repeated --destdir ${TMP}/bin-repeated
