@@ -54,7 +54,7 @@ def _main(args, output_file):
     logger.info(args)
 
     # Fix seed for stochastic decoding
-    if args.seed is not None:
+    if args.seed is not None and not args.no_seed_provided:
         np.random.seed(args.seed)
         torch.manual_seed(args.seed)
 
@@ -85,10 +85,6 @@ def _main(args, output_file):
             beamable_mm_beam_size=None if args.no_beamable_mm else args.beam,
             need_attn=args.print_alignment,
         )
-        if args.retain_dropout:
-            model.set_inference_dropout(module_names=args.retain_dropout_modules)
-        else:
-            model.eval()
         if args.fp16:
             model.half()
         if use_cuda:
