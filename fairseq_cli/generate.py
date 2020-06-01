@@ -77,6 +77,7 @@ def _main(args, output_file):
         utils.split_paths(args.path),
         arg_overrides=eval(args.model_overrides),
         task=task,
+        generation_args=args,
     )
 
     # Optimize ensemble for generation

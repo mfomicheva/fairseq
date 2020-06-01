@@ -101,6 +101,7 @@ def main(args):
         args.path.split(os.pathsep),
         arg_overrides=eval(args.model_overrides),
         task=task,
+        generation_args=args,
     )
 
     # Set dictionaries
