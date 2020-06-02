@@ -158,7 +158,6 @@ class DownsampledMultiHeadAttention(nn.ModuleList):
     ):
         self.embed_dim = embed_dim
         self.num_heads = num_heads
-        self.dropout_module = FairseqDropout(dropout, args=args, parent_module=self)
         self.head_dim = embed_dim // num_heads
         self.downsample = downsample
         self.gated = gated
@@ -171,7 +170,7 @@ class DownsampledMultiHeadAttention(nn.ModuleList):
                 attention_heads.append(
                     SingleHeadAttention(
                         out_channels, self.embed_dim, self.head_dim, index,
-                        self.dropout_module.p, bias, self.project_input, self.gated,
+                        dropout, bias, self.project_input, self.gated,
                         self.downsample, self.num_heads,
                     )
                 )
@@ -182,7 +181,7 @@ class DownsampledMultiHeadAttention(nn.ModuleList):
             # if not being downsampled, we can do the heads with one linear layer instead of separate ones
             super().__init__()
             self.attention_module = SingleHeadAttention(
-                out_channels, self.embed_dim, self.head_dim, 1, self.dropout_module.p,
+                out_channels, self.embed_dim, self.head_dim, 1, dropout,
                 bias, self.project_input, self.gated, self.downsample, self.num_heads, args=args,
             )
 

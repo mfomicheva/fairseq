@@ -71,13 +71,21 @@ def _main(args, output_file):
         src_dict = None
     tgt_dict = task.target_dictionary
 
+    # Set inference dropout
+    overrides = eval(args.model_overrides)
+    if args.retain_dropout:
+        gen_overrides = {'retain_dropout': args.retain_dropout, 'exclude_dropout_modules': args.exclude_dropout_modules,}
+        if overrides is not None:
+            overrides.update(gen_overrides)
+        else:
+            overrides = gen_overrides
+
     # Load ensemble
     logger.info('loading model(s) from {}'.format(args.path))
     models, _model_args = checkpoint_utils.load_model_ensemble(
         utils.split_paths(args.path),
-        arg_overrides=eval(args.model_overrides),
+        arg_overrides=overrides,
         task=task,
-        generation_args=args,
     )
 
     # Optimize ensemble for generation

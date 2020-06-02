@@ -95,13 +95,22 @@ def main(args):
     # Setup task, e.g., translation
     task = tasks.setup_task(args)
 
+    # Set inference dropout
+    overrides = eval(args.model_overrides)
+    if args.retain_dropout:
+        gen_overrides = {'retain_dropout': args.retain_dropout,
+                         'exclude_dropout_modules': args.exclude_dropout_modules, }
+        if overrides is not None:
+            overrides.update(gen_overrides)
+        else:
+            overrides = gen_overrides
+
     # Load ensemble
     logger.info('loading model(s) from {}'.format(args.path))
     models, _model_args = checkpoint_utils.load_model_ensemble(
         args.path.split(os.pathsep),
-        arg_overrides=eval(args.model_overrides),
+        arg_overrides=overrides,
         task=task,
-        generation_args=args,
     )
 
     # Set dictionaries

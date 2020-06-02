@@ -177,7 +177,7 @@ def load_checkpoint_to_cpu(path, arg_overrides=None):
     return state
 
 
-def load_model_ensemble(filenames, arg_overrides=None, task=None, strict=True, suffix='', generation_args=None):
+def load_model_ensemble(filenames, arg_overrides=None, task=None, strict=True, suffix=''):
     """Loads an ensemble of models.
 
     Args:
@@ -186,13 +186,11 @@ def load_model_ensemble(filenames, arg_overrides=None, task=None, strict=True, s
             were used during model training
         task (fairseq.tasks.FairseqTask, optional): task to use for loading
     """
-    ensemble, args, _task = load_model_ensemble_and_task(
-        filenames, arg_overrides, task, strict, suffix, generation_args=generation_args
-    )
+    ensemble, args, _task = load_model_ensemble_and_task(filenames, arg_overrides, task, strict, suffix)
     return ensemble, args
 
 
-def load_model_ensemble_and_task(filenames, arg_overrides=None, task=None, strict=True, suffix='', generation_args=None):
+def load_model_ensemble_and_task(filenames, arg_overrides=None, task=None, strict=True, suffix=''):
     from fairseq import tasks
 
     ensemble = []
@@ -207,8 +205,6 @@ def load_model_ensemble_and_task(filenames, arg_overrides=None, task=None, stric
             task = tasks.setup_task(args)
 
         # build model for ensemble
-        args.retain_dropout = generation_args.retain_dropout
-        args.exclude_dropout_modules = generation_args.exclude_dropout_modules
         model = task.build_model(args)
         model.load_state_dict(state["model"], strict=strict, args=args)
         ensemble.append(model)
