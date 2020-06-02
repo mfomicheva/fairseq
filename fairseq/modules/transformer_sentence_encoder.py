@@ -18,7 +18,6 @@ from fairseq.modules import (
     TransformerSentenceEncoderLayer,
 )
 from fairseq.modules.quant_noise import quant_noise as apply_quant_noise_
-import random
 
 
 def init_bert_params(module):
@@ -156,7 +155,7 @@ class TransformerSentenceEncoder(nn.Module):
                 embedding_dim=self.embedding_dim,
                 ffn_embedding_dim=ffn_embedding_dim,
                 num_attention_heads=num_attention_heads,
-                dropout=self.dropout,
+                dropout=self.dropout.p,
                 attention_dropout=attention_dropout,
                 activation_dropout=activation_dropout,
                 activation_fn=activation_fn,
