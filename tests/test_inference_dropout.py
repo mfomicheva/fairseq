@@ -17,6 +17,8 @@ class TestInferenceDropout(unittest.TestCase):
         self.args = self.parser.parse_args([])
         self.args.encoder_layers = 2
         self.args.decoder_layers = 1
+        self.args.retain_dropout = False
+        self.args.exclude_dropout_modules = None
 
     def test_sets_inference_dropout_to_true(self):
         self.args.retain_dropout = True

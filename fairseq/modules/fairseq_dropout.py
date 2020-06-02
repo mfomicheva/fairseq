@@ -13,7 +13,7 @@ class FairseqDropout(nn.Module):
         super().__init__()
         if args is not None:
             retain = getattr(args, 'retain_dropout', False)
-            exclude_modules = getattr(args, 'exclude_dropout_modules', [])
+            exclude_modules = getattr(args, 'exclude_dropout_modules') or []
             self.apply_during_inference = retain and (type(parent_module).__name__ not in exclude_modules)
         else:
             self.apply_during_inference = apply_during_inference
