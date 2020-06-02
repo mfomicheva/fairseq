@@ -207,8 +207,8 @@ class LSTMEncoder(FairseqEncoder):
     ):
         super().__init__(dictionary)
         self.num_layers = num_layers
-        self.dropout_in = FairseqDropout(dropout_in, args=args, parent_module=self)
-        self.dropout_out = FairseqDropout(dropout_out, args=args, parent_module=self)
+        self.dropout_in_module = FairseqDropout(dropout_in, args=args, parent_module=self)
+        self.dropout_out_module = FairseqDropout(dropout_out, args=args, parent_module=self)
         self.bidirectional = bidirectional
         self.hidden_size = hidden_size
         self.max_source_positions = max_source_positions
@@ -224,7 +224,7 @@ class LSTMEncoder(FairseqEncoder):
             input_size=embed_dim,
             hidden_size=hidden_size,
             num_layers=num_layers,
-            dropout=self.dropout_out if num_layers > 1 else 0.,
+            dropout=self.dropout_out_module.p if num_layers > 1 else 0.,
             bidirectional=bidirectional,
         )
         self.left_pad = left_pad
@@ -247,7 +247,7 @@ class LSTMEncoder(FairseqEncoder):
 
         # embed tokens
         x = self.embed_tokens(src_tokens)
-        x = self.dropout_in(x)
+        x = self.dropout_in_module(x)
 
         # B x T x C -> T x B x C
         x = x.transpose(0, 1)
@@ -266,7 +266,7 @@ class LSTMEncoder(FairseqEncoder):
 
         # unpack outputs and apply dropout
         x, _ = nn.utils.rnn.pad_packed_sequence(packed_outs, padding_value=self.padding_idx*1.0)
-        x = self.dropout_out(x)
+        x = self.dropout_out_module(x)
         assert list(x.size()) == [seqlen, bsz, self.output_units]
 
         if self.bidirectional:
@@ -343,8 +343,8 @@ class LSTMDecoder(FairseqIncrementalDecoder):
         args=None
     ):
         super().__init__(dictionary)
-        self.dropout_in = FairseqDropout(dropout_in, args=args, parent_module=self)
-        self.dropout_out = FairseqDropout(dropout_out, args=args, parent_module=self)
+        self.dropout_in_module = FairseqDropout(dropout_in, args=args, parent_module=self)
+        self.dropout_out_module = FairseqDropout(dropout_out, args=args, parent_module=self)
         self.hidden_size = hidden_size
         self.share_input_output_embed = share_input_output_embed
         self.need_attn = True
@@ -447,7 +447,7 @@ class LSTMDecoder(FairseqIncrementalDecoder):
 
         # embed tokens
         x = self.embed_tokens(prev_output_tokens)
-        x = self.dropout_in(x)
+        x = self.dropout_in_module(x)
 
         # B x T x C -> T x B x C
         x = x.transpose(0, 1)
@@ -486,7 +486,7 @@ class LSTMDecoder(FairseqIncrementalDecoder):
                 hidden, cell = rnn(input, (prev_hiddens[i], prev_cells[i]))
 
                 # hidden state becomes the input to the next layer
-                input = self.dropout_out(hidden)
+                input = self.dropout_out_module(hidden)
 
                 # save state for next time step
                 prev_hiddens[i] = hidden
@@ -498,7 +498,7 @@ class LSTMDecoder(FairseqIncrementalDecoder):
                 out, attn_scores[:, j, :] = self.attention(hidden, encoder_outs, encoder_padding_mask)
             else:
                 out = hidden
-            out = self.dropout_out(out)
+            out = self.dropout_out_module(out)
 
             # input feeding
             if input_feed is not None:
@@ -524,7 +524,7 @@ class LSTMDecoder(FairseqIncrementalDecoder):
 
         if hasattr(self, 'additional_fc') and self.adaptive_softmax is None:
             x = self.additional_fc(x)
-            x = self.dropout_out(x)
+            x = self.dropout_out_module(x)
         # srclen x tgtlen x bsz -> bsz x tgtlen x srclen
         if not self.training and self.need_attn and self.attention is not None:
             assert attn_scores is not None

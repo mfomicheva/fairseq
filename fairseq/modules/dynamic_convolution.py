@@ -75,7 +75,7 @@ class DynamicConv1dTBC(nn.Module):
         self.kernel_size = kernel_size
         self.padding_l = padding_l
         self.num_heads = num_heads
-        self.weight_dropout = FairseqDropout(weight_dropout, args=args, parent_module=self)
+        self.weight_dropout_module = FairseqDropout(weight_dropout, args=args, parent_module=self)
         self.weight_softmax = weight_softmax
         self.renorm_padding = renorm_padding
 
@@ -167,7 +167,7 @@ class DynamicConv1dTBC(nn.Module):
         if self.weight_softmax and self.renorm_padding:
             weight = F.softmax(weight, dim=1)
 
-        weight = self.weight_dropout(weight, inplace=False)
+        weight = self.weight_dropout_module(weight, inplace=False)
 
         output = torch.bmm(x_unfold, weight.unsqueeze(2))  # T*B*H x R x 1
         output = output.view(T, B, C)
@@ -192,7 +192,7 @@ class DynamicConv1dTBC(nn.Module):
         if not self.renorm_padding:
             if self.weight_softmax:
                 weight = F.softmax(weight, dim=1)
-            weight = self.weight_dropout(weight, inplace=False)
+            weight = self.weight_dropout_module(weight, inplace=False)
         weight = weight.narrow(1, 0, K).contiguous()
         weight = weight.view(T, B*H, K).transpose(0, 1)
 
@@ -204,7 +204,7 @@ class DynamicConv1dTBC(nn.Module):
             weight_expanded = weight_expanded.narrow(2, self.padding_l, T)
             # normalize the weight over valid positions like self-attention
             weight_expanded = F.softmax(weight_expanded, dim=2)
-            weight_expanded = self.weight_dropout(weight_expanded, inplace=False)
+            weight_expanded = self.weight_dropout_module(weight_expanded, inplace=False)
         else:
             P = self.padding_l
             # For efficieny, we cut the kernel size and reduce the padding when the kernel is larger than the length
@@ -240,6 +240,6 @@ class DynamicConv1dTBC(nn.Module):
 
         if self.query_size != self.input_size:
             s += ', query_size={}'.format(self.query_size)
-        if self.weight_dropout.p > 0.:
-            s += ', weight_dropout={}'.format(self.weight_dropout.p)
+        if self.weight_dropout_module.p > 0.:
+            s += ', weight_dropout={}'.format(self.weight_dropout_module.p)
         return s

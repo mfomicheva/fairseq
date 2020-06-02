@@ -153,7 +153,7 @@ class FConvEncoder(FairseqEncoder):
         convolutions=((512, 3),) * 20, dropout=0.1, args=None,
     ):
         super().__init__(dictionary)
-        self.dropout = FairseqDropout(dropout, args=args, parent_module=self)
+        self.dropout_module = FairseqDropout(dropout, args=args, parent_module=self)
         self.num_attention_layers = None
 
         num_embeddings = len(dictionary)
@@ -216,7 +216,7 @@ class FConvEncoder(FairseqEncoder):
         """
         # embed tokens and positions
         x = self.embed_tokens(src_tokens) + self.embed_positions(src_tokens)
-        x = self.dropout(x)
+        x = self.dropout_module(x)
         input_embedding = x
 
         # project to size of convolution
@@ -242,7 +242,7 @@ class FConvEncoder(FairseqEncoder):
             if encoder_padding_mask is not None:
                 x = x.masked_fill(encoder_padding_mask.unsqueeze(-1), 0)
 
-            x = self.dropout(x)
+            x = self.dropout_module(x)
             if conv.kernel_size[0] % 2 == 1:
                 # padding is implicit in the conv
                 x = conv(x)
@@ -357,7 +357,7 @@ class FConvDecoder(FairseqIncrementalDecoder):
     ):
         super().__init__(dictionary)
         self.register_buffer('version', torch.Tensor([2]))
-        self.dropout = FairseqDropout(dropout, args=args, parent_module=self)
+        self.dropout_module = FairseqDropout(dropout, args=args, parent_module=self)
         self.need_attn = True
 
         convolutions = extend_conv_spec(convolutions)
@@ -442,7 +442,7 @@ class FConvDecoder(FairseqIncrementalDecoder):
 
         # embed tokens and combine with positional embeddings
         x += pos_embed
-        x = self.dropout(x)
+        x = self.dropout_module(x)
         target_embedding = x
 
         # project to size of convolution
@@ -463,7 +463,7 @@ class FConvDecoder(FairseqIncrementalDecoder):
             else:
                 residual = None
 
-            x = self.dropout(x)
+            x = self.dropout_module(x)
             x = conv(x, incremental_state)
             x = F.glu(x, dim=2)
 
@@ -493,7 +493,7 @@ class FConvDecoder(FairseqIncrementalDecoder):
         # project back to size of vocabulary if not using adaptive softmax
         if self.fc2 is not None and self.fc3 is not None:
             x = self.fc2(x)
-            x = self.dropout(x)
+            x = self.dropout_module(x)
             x = self.fc3(x)
 
         return x, avg_attn_scores

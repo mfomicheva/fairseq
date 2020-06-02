@@ -43,8 +43,8 @@ class TransformerSentenceEncoderLayer(nn.Module):
         super().__init__()
         # Initialize parameters
         self.embedding_dim = embedding_dim
-        self.dropout = FairseqDropout(dropout, args=args, parent_module=self)
-        self.activation_dropout = FairseqDropout(activation_dropout, args=args, parent_module=self)
+        self.dropout_module = FairseqDropout(dropout, args=args, parent_module=self)
+        self.activation_dropout_module = FairseqDropout(activation_dropout, args=args, parent_module=self)
 
         # Initialize blocks
         self.activation_fn = utils.get_activation_fn(activation_fn)
@@ -89,15 +89,15 @@ class TransformerSentenceEncoderLayer(nn.Module):
             need_weights=False,
             attn_mask=self_attn_mask,
         )
-        x = self.dropout(x)
+        x = self.dropout_module(x)
         x = residual + x
         x = self.self_attn_layer_norm(x)
 
         residual = x
         x = self.activation_fn(self.fc1(x))
-        x = self.activation_dropout(x)
+        x = self.activation_dropout_module(x)
         x = self.fc2(x)
-        x = self.dropout(x)
+        x = self.dropout_module(x)
         x = residual + x
         x = self.final_layer_norm(x)
         return x, attn

@@ -24,7 +24,7 @@ class SingleHeadAttention(nn.Module):
     ):
         super().__init__()
         self.embed_dim = embed_dim
-        self.dropout = FairseqDropout(dropout, args=args, parent_module=self)
+        self.dropout_module = FairseqDropout(dropout, args=args, parent_module=self)
         self.head_index = head_index
         self.head_dim = head_dim
         self.project_input = project_input
@@ -135,7 +135,7 @@ class SingleHeadAttention(nn.Module):
                 )
                 attn_weights = attn_weights.view(size, tgt_len, src_len)
         attn_weights = F.softmax(attn_weights, dim=-1)
-        attn_weights = self.dropout(attn_weights)
+        attn_weights = self.dropout_module(attn_weights)
 
         attn = torch.bmm(attn_weights, v)
         if self.downsample:
@@ -158,7 +158,7 @@ class DownsampledMultiHeadAttention(nn.ModuleList):
     ):
         self.embed_dim = embed_dim
         self.num_heads = num_heads
-        self.dropout = FairseqDropout(dropout, args=args, parent_module=self)
+        self.dropout_module = FairseqDropout(dropout, args=args, parent_module=self)
         self.head_dim = embed_dim // num_heads
         self.downsample = downsample
         self.gated = gated
@@ -171,7 +171,7 @@ class DownsampledMultiHeadAttention(nn.ModuleList):
                 attention_heads.append(
                     SingleHeadAttention(
                         out_channels, self.embed_dim, self.head_dim, index,
-                        self.dropout.p, bias, self.project_input, self.gated,
+                        self.dropout_module.p, bias, self.project_input, self.gated,
                         self.downsample, self.num_heads,
                     )
                 )
@@ -182,7 +182,7 @@ class DownsampledMultiHeadAttention(nn.ModuleList):
             # if not being downsampled, we can do the heads with one linear layer instead of separate ones
             super().__init__()
             self.attention_module = SingleHeadAttention(
-                out_channels, self.embed_dim, self.head_dim, 1, self.dropout.p,
+                out_channels, self.embed_dim, self.head_dim, 1, self.dropout_module.p,
                 bias, self.project_input, self.gated, self.downsample, self.num_heads, args=args,
             )
 

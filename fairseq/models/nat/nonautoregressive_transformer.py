@@ -317,7 +317,7 @@ class NATransformerDecoder(FairseqNATDecoder):
 
         if positions is not None:
             x += positions
-        x = self.dropout(x)
+        x = self.dropout_module(x)
         decoder_padding_mask = prev_output_tokens.eq(self.padding_idx)
         return x, decoder_padding_mask
 

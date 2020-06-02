@@ -177,7 +177,7 @@ class FConvEncoder(FairseqEncoder):
         attention_nheads=1, args=None,
     ):
         super().__init__(dictionary)
-        self.dropout = FairseqDropout(dropout, args=args, parent_module=self)
+        self.dropout_module = FairseqDropout(dropout, args=args, parent_module=self)
         self.num_attention_layers = None
 
         num_embeddings = len(dictionary)
@@ -221,7 +221,7 @@ class FConvEncoder(FairseqEncoder):
     def forward(self, src_tokens, src_lengths):
         # embed tokens and positions
         x = self.embed_tokens(src_tokens) + self.embed_positions(src_tokens)
-        x = self.dropout(x)
+        x = self.dropout_module(x)
         input_embedding = x.transpose(0, 1)
 
         # project to size of convolution
@@ -241,7 +241,7 @@ class FConvEncoder(FairseqEncoder):
             if encoder_padding_mask is not None:
                 x = x.masked_fill(encoder_padding_mask.unsqueeze(-1), 0)
 
-            x = self.dropout(x)
+            x = self.dropout_module(x)
             padding_l = (conv.kernel_size[0] - 1) // 2
             padding_r = conv.kernel_size[0] // 2
             x = F.pad(x, (0, 0, 0, 0, padding_l, padding_r))
@@ -308,7 +308,7 @@ class FConvDecoder(FairseqDecoder):
         self.register_buffer('version', torch.Tensor([2]))
         self.pretrained = pretrained
         self.pretrained_decoder = trained_decoder
-        self.dropout = FairseqDropout(dropout, args=args, parent_module=self)
+        self.dropout_module = FairseqDropout(dropout, args=args, parent_module=self)
         self.need_attn = True
         in_channels = convolutions[0][0]
 
@@ -413,7 +413,7 @@ class FConvDecoder(FairseqDecoder):
 
         # embed tokens and positions
         x = self.embed_tokens(prev_output_tokens) + positions
-        x = self.dropout(x)
+        x = self.dropout_module(x)
         target_embedding = x.transpose(0, 1)
 
         # project to size of convolution
@@ -429,7 +429,7 @@ class FConvDecoder(FairseqDecoder):
         ):
             residual = x if proj is None else proj(x)
 
-            x = self.dropout(x)
+            x = self.dropout_module(x)
             x = conv(x)
             x = F.glu(x, dim=2)
 
@@ -454,7 +454,7 @@ class FConvDecoder(FairseqDecoder):
 
         # project back to size of vocabulary
         x = self.fc2(x)
-        x = self.dropout(x)
+        x = self.dropout_module(x)
         if not self.pretrained:
             x = self.fc3(x)
 

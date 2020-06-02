@@ -53,7 +53,7 @@ class LightconvLayer(nn.Module):
         self.padding_l = padding_l
         self.num_heads = num_heads
         self.weight_softmax = weight_softmax
-        self.weight_dropout = FairseqDropout(weight_dropout, args=args, parent_module=self)
+        self.weight_dropout_module = FairseqDropout(weight_dropout, args=args, parent_module=self)
 
         self.weight = nn.Parameter(torch.Tensor(num_heads, kernel_size))
         if bias:
@@ -99,7 +99,7 @@ class LightconvLayer(nn.Module):
 
             weight = weight.view(1, H, K).expand(T*B, H, K).contiguous().view(T*B*H, K, 1)
 
-            weight = self.weight_dropout(weight)
+            weight = self.weight_dropout_module(weight)
             output = torch.bmm(x_unfold, weight)  # T*B*H x R x 1
             output = output.view(T, B, C)
             return output
@@ -110,8 +110,8 @@ class LightconvLayer(nn.Module):
             weight = self.weight
             if self.weight_softmax:
                 weight = F.softmax(self.weight, -1)
-            if self.weight_dropout.p:
-                weight = self.weight_dropout(weight)
+            if self.weight_dropout_module.p:
+                weight = self.weight_dropout_module(weight)
             return lightconvFunction.apply(x, weight, self.padding_l).permute(2, 0, 1)
 
     def reorder_incremental_state(self, incremental_state, new_order):

@@ -311,7 +311,7 @@ class TransformerEncoder(FairseqEncoder):
         super().__init__(dictionary)
         self.register_buffer("version", torch.Tensor([3]))
 
-        self.dropout = FairseqDropout(args.dropout, args=args, parent_module=self)
+        self.dropout_module = FairseqDropout(args.dropout, args=args, parent_module=self)
         self.encoder_layerdrop = args.encoder_layerdrop
 
         embed_dim = embed_tokens.embedding_dim
@@ -371,7 +371,7 @@ class TransformerEncoder(FairseqEncoder):
             x = embed + self.embed_positions(src_tokens)
         if self.layernorm_embedding is not None:
             x = self.layernorm_embedding(x)
-        x = self.dropout(x)
+        x = self.dropout_module(x)
         if self.quant_noise is not None:
             x = self.quant_noise(x)
         return x, embed
@@ -533,7 +533,7 @@ class TransformerDecoder(FairseqIncrementalDecoder):
         self.register_buffer("version", torch.Tensor([3]))
         self._future_mask = torch.empty(0)
 
-        self.dropout = FairseqDropout(args.dropout, args=args, parent_module=self)
+        self.dropout_module = FairseqDropout(args.dropout, args=args, parent_module=self)
         self.decoder_layerdrop = args.decoder_layerdrop
         self.share_input_output_embed = args.share_decoder_input_output_embed
 
@@ -732,7 +732,7 @@ class TransformerDecoder(FairseqIncrementalDecoder):
         if self.layernorm_embedding is not None:
             x = self.layernorm_embedding(x)
 
-        x = self.dropout(x)
+        x = self.dropout_module(x)
 
         # B x T x C -> T x B x C
         x = x.transpose(0, 1)

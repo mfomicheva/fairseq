@@ -70,7 +70,7 @@ class AdaptiveSoftmax(nn.Module):
 
         self.vocab_size = vocab_size
         self.cutoff = cutoff
-        self.dropout = FairseqDropout(dropout, args=args, parent_module=self)
+        self.dropout_module = FairseqDropout(dropout, args=args, parent_module=self)
         self.input_dim = input_dim
         self.factor = factor
         self.q_noise = q_noise
@@ -116,7 +116,7 @@ class AdaptiveSoftmax(nn.Module):
 
             m = nn.Sequential(
                 proj,
-                nn.Dropout(self.dropout.p),
+                nn.Dropout(self.dropout_module.p),
                 quant_noise(out_proj, self.q_noise, self.qn_block_size),
             )
 
@@ -162,7 +162,7 @@ class AdaptiveSoftmax(nn.Module):
         """
 
         input = input.contiguous().view(-1, input.size(-1))
-        input = self.dropout(input)
+        input = self.dropout_module(input)
 
         new_target, target_idxs = self.adapt_target(target)
         output = [self.head(input)]

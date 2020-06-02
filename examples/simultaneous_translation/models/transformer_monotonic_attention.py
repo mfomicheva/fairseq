@@ -193,7 +193,7 @@ class TransformerMonotonicDecoder(TransformerDecoder):
 
         if positions is not None:
             x += positions
-        x = self.dropout(x)
+        x = self.dropout_module(x)
 
         # B x T x C -> T x B x C
         x = x.transpose(0, 1)

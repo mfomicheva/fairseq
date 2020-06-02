@@ -23,36 +23,36 @@ class TestInferenceDropout(unittest.TestCase):
     def test_sets_inference_dropout_to_true(self):
         self.args.retain_dropout = True
         self.transformer_model = TransformerModel.build_model(self.args, self.task)
-        assert self.transformer_model.encoder.dropout.apply_during_inference
-        assert self.transformer_model.decoder.dropout.apply_during_inference
+        assert self.transformer_model.encoder.dropout_module.apply_during_inference
+        assert self.transformer_model.decoder.dropout_module.apply_during_inference
         for layer in self.transformer_model.encoder.layers:
-            assert layer.dropout.apply_during_inference
+            assert layer.dropout_module.apply_during_inference
 
     def test_inference_dropout_false_by_default(self):
         self.transformer_model = TransformerModel.build_model(self.args, self.task)
-        assert not self.transformer_model.encoder.dropout.apply_during_inference
-        assert not self.transformer_model.decoder.dropout.apply_during_inference
+        assert not self.transformer_model.encoder.dropout_module.apply_during_inference
+        assert not self.transformer_model.decoder.dropout_module.apply_during_inference
         for layer in self.transformer_model.encoder.layers:
-            assert not layer.dropout.apply_during_inference
+            assert not layer.dropout_module.apply_during_inference
         for layer in self.transformer_model.decoder.layers:
-            assert not layer.dropout.apply_during_inference
+            assert not layer.dropout_module.apply_during_inference
 
     def test_applies_training_mode(self):
         self.transformer_model = TransformerModel.build_model(self.args, self.task)
-        assert self.transformer_model.encoder.dropout.training
+        assert self.transformer_model.encoder.dropout_module.training
         for layer in self.transformer_model.encoder.layers:
-            assert layer.dropout.training
+            assert layer.dropout_module.training
 
         self.transformer_model.eval()
-        assert not self.transformer_model.decoder.dropout.training
+        assert not self.transformer_model.decoder.dropout_module.training
         for layer in self.transformer_model.encoder.layers:
-            assert not layer.dropout.training
+            assert not layer.dropout_module.training
 
     def test_excludes_modules(self):
         self.args.retain_dropout = True
         self.args.exclude_dropout_modules = ['TransformerEncoder', 'TransformerEncoderLayer']
         self.transformer_model = TransformerModel.build_model(self.args, self.task)
-        assert not self.transformer_model.encoder.dropout.apply_during_inference
-        assert self.transformer_model.decoder.dropout.apply_during_inference
+        assert not self.transformer_model.encoder.dropout_module.apply_during_inference
+        assert self.transformer_model.decoder.dropout_module.apply_during_inference
         for layer in self.transformer_model.encoder.layers:
-            assert not layer.dropout.apply_during_inference
+            assert not layer.dropout_module.apply_during_inference

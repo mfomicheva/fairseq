@@ -215,7 +215,7 @@ class LightConvEncoder(FairseqEncoder):
 
     def __init__(self, args, dictionary, embed_tokens):
         super().__init__(dictionary)
-        self.dropout = FairseqDropout(args.dropout, args=args, parent_module=self)
+        self.dropout_module = FairseqDropout(args.dropout, args=args, parent_module=self)
 
         embed_dim = embed_tokens.embedding_dim
         self.padding_idx = embed_tokens.padding_idx
@@ -255,7 +255,7 @@ class LightConvEncoder(FairseqEncoder):
         x = self.embed_scale * self.embed_tokens(src_tokens)
         if self.embed_positions is not None:
             x += self.embed_positions(src_tokens)
-        x = self.dropout(x)
+        x = self.dropout_module(x)
 
         # B x T x C -> T x B x C
         x = x.transpose(0, 1)
@@ -318,7 +318,7 @@ class LightConvDecoder(FairseqIncrementalDecoder):
 
     def __init__(self, args, dictionary, embed_tokens, no_encoder_attn=False, final_norm=True):
         super().__init__(dictionary)
-        self.dropout = FairseqDropout(args.dropout, args=args, parent_module=self)
+        self.dropout_module = FairseqDropout(args.dropout, args=args, parent_module=self)
         self.share_input_output_embed = args.share_decoder_input_output_embed
 
         input_embed_dim = embed_tokens.embedding_dim
@@ -404,7 +404,7 @@ class LightConvDecoder(FairseqIncrementalDecoder):
 
         if positions is not None:
             x += positions
-        x = self.dropout(x)
+        x = self.dropout_module(x)
 
         # B x T x C -> T x B x C
         x = x.transpose(0, 1)
@@ -489,9 +489,9 @@ class LightConvEncoderLayer(nn.Module):
             raise NotImplementedError
         self.linear2 = Linear(self.conv_dim, self.embed_dim)
 
-        self.dropout = FairseqDropout(args.dropout, args=args, parent_module=self)
-        self.relu_dropout = FairseqDropout(args.relu_dropout, args=args, parent_module=self)
-        self.input_dropout = FairseqDropout(args.input_dropout, args=args, parent_module=self)
+        self.dropout_module = FairseqDropout(args.dropout, args=args, parent_module=self)
+        self.relu_dropout_module = FairseqDropout(args.relu_dropout, args=args, parent_module=self)
+        self.input_dropout_module = FairseqDropout(args.input_dropout, args=args, parent_module=self)
         self.normalize_before = args.encoder_normalize_before
         self.fc1 = Linear(self.embed_dim, args.encoder_ffn_embed_dim)
         self.fc2 = Linear(args.encoder_ffn_embed_dim, self.embed_dim)
@@ -509,7 +509,7 @@ class LightConvEncoderLayer(nn.Module):
         """
         residual = x
         x = self.maybe_layer_norm(0, x, before=True)
-        x = self.input_dropout(x)
+        x = self.input_dropout_module(x)
         x = self.linear1(x)
         if self.act is not None:
             x = self.act(x)
@@ -517,16 +517,16 @@ class LightConvEncoderLayer(nn.Module):
             x = x.masked_fill(encoder_padding_mask.transpose(0, 1).unsqueeze(2), 0)
         x = self.conv(x)
         x = self.linear2(x)
-        x = self.dropout(x)
+        x = self.dropout_module(x)
         x = residual + x
         x = self.maybe_layer_norm(0, x, after=True)
 
         residual = x
         x = self.maybe_layer_norm(1, x, before=True)
         x = F.relu(self.fc1(x))
-        x = self.relu_dropout(x)
+        x = self.relu_dropout_module(x)
         x = self.fc2(x)
-        x = self.dropout(x)
+        x = self.dropout_module(x)
         x = residual + x
         x = self.maybe_layer_norm(1, x, after=True)
         return x
@@ -540,7 +540,7 @@ class LightConvEncoderLayer(nn.Module):
 
     def extra_repr(self):
         return 'dropout={}, relu_dropout={}, input_dropout={}, normalize_before={}'.format(
-            self.dropout, self.relu_dropout, self.input_dropout, self.normalize_before)
+            self.dropout_module.p, self.relu_dropout_module.p, self.input_dropout_module.p, self.normalize_before)
 
 
 class LightConvDecoderLayer(nn.Module):
@@ -577,9 +577,9 @@ class LightConvDecoderLayer(nn.Module):
             raise NotImplementedError
         self.linear2 = Linear(self.conv_dim, self.embed_dim)
 
-        self.dropout = FairseqDropout(args.dropout, args=args, parent_module=self)
-        self.relu_dropout = FairseqDropout(args.relu_dropout, args=args, parent_module=self)
-        self.input_dropout = FairseqDropout(args.input_dropout, args=args, parent_module=self)
+        self.dropout_module = FairseqDropout(args.dropout, args=args, parent_module=self)
+        self.relu_dropout_module = FairseqDropout(args.relu_dropout, args=args, parent_module=self)
+        self.input_dropout_module = FairseqDropout(args.input_dropout, args=args, parent_module=self)
         self.normalize_before = args.decoder_normalize_before
 
         self.conv_layer_norm = LayerNorm(self.embed_dim)
@@ -619,13 +619,13 @@ class LightConvDecoderLayer(nn.Module):
             if incremental_state is None:
                 incremental_state = {}
             self.conv._set_input_buffer(incremental_state, prev_conv_state)
-        x = self.input_dropout(x)
+        x = self.input_dropout_module(x)
         x = self.linear1(x)
         if self.act is not None:
             x = self.act(x)
         x = self.conv(x, incremental_state=incremental_state)
         x = self.linear2(x)
-        x = self.dropout(x)
+        x = self.dropout_module(x)
         x = residual + x
         x = self.maybe_layer_norm(self.conv_layer_norm, x, after=True)
 
@@ -648,16 +648,16 @@ class LightConvDecoderLayer(nn.Module):
                 static_kv=True,
                 need_weights=(not self.training and self.need_attn),
             )
-            x = self.dropout(x)
+            x = self.dropout_module(x)
             x = residual + x
             x = self.maybe_layer_norm(self.encoder_attn_layer_norm, x, after=True)
 
         residual = x
         x = self.maybe_layer_norm(self.final_layer_norm, x, before=True)
         x = F.relu(self.fc1(x))
-        x = self.relu_dropout(x)
+        x = self.relu_dropout_module(x)
         x = self.fc2(x)
-        x = self.dropout(x)
+        x = self.dropout_module(x)
         x = residual + x
         x = self.maybe_layer_norm(self.final_layer_norm, x, after=True)
         return x, attn
@@ -674,7 +674,7 @@ class LightConvDecoderLayer(nn.Module):
 
     def extra_repr(self):
         return 'dropout={}, relu_dropout={}, input_dropout={}, normalize_before={}'.format(
-            self.dropout, self.relu_dropout, self.input_dropout, self.normalize_before)
+            self.dropout_module.p, self.relu_dropout_module.p, self.input_dropout_module.p, self.normalize_before)
 
 
 def Embedding(num_embeddings, embedding_dim, padding_idx):

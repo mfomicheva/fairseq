@@ -46,7 +46,7 @@ class MultiheadAttention(nn.Module):
         self.qkv_same_dim = self.kdim == embed_dim and self.vdim == embed_dim
 
         self.num_heads = num_heads
-        self.dropout = FairseqDropout(dropout, args=args, parent_module=self)
+        self.dropout_module = FairseqDropout(dropout, args=args, parent_module=self)
 
         self.head_dim = embed_dim // num_heads
         assert (
@@ -166,10 +166,10 @@ class MultiheadAttention(nn.Module):
                 self.bias_k,
                 self.bias_v,
                 self.add_zero_attn,
-                self.dropout.p,
+                self.dropout_module.p,
                 self.out_proj.weight,
                 self.out_proj.bias,
-                self.training or self.dropout.apply_during_inference,
+                self.training or self.dropout_module.apply_during_inference,
                 key_padding_mask,
                 need_weights,
                 attn_mask,
@@ -342,7 +342,7 @@ class MultiheadAttention(nn.Module):
             attn_weights, dim=-1, onnx_trace=self.onnx_trace
         )
         attn_weights = attn_weights_float.type_as(attn_weights)
-        attn_probs = self.dropout(
+        attn_probs = self.dropout_module(
             attn_weights_float.type_as(attn_weights),
         )
         assert v is not None

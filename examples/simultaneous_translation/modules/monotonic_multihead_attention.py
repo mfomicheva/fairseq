@@ -534,7 +534,7 @@ class MonotonicMultiheadAttentionInfiniteLookback(MonotonicMultiheadAttentionHar
 
             beta = exp_soft_energy * torch.cumsum(inner_items.flip(dims=[2]), dim=2).flip(dims=[2])
 
-            beta = self.dropout(beta)
+            beta = self.dropout_module(beta)
 
         assert not torch.isnan(beta).any(), "NaN detected in beta."
 

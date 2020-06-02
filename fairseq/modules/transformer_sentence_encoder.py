@@ -105,7 +105,7 @@ class TransformerSentenceEncoder(nn.Module):
         super().__init__()
         self.padding_idx = padding_idx
         self.vocab_size = vocab_size
-        self.dropout = FairseqDropout(dropout, args=args, parent_module=self)
+        self.dropout_module = FairseqDropout(dropout, args=args, parent_module=self)
         self.layerdrop = layerdrop
         self.max_seq_len = max_seq_len
         self.embedding_dim = embedding_dim
@@ -155,7 +155,7 @@ class TransformerSentenceEncoder(nn.Module):
                 embedding_dim=self.embedding_dim,
                 ffn_embedding_dim=ffn_embedding_dim,
                 num_attention_heads=num_attention_heads,
-                dropout=self.dropout.p,
+                dropout=self.dropout_module.p,
                 attention_dropout=attention_dropout,
                 activation_dropout=activation_dropout,
                 activation_fn=activation_fn,
@@ -220,7 +220,7 @@ class TransformerSentenceEncoder(nn.Module):
         if self.emb_layer_norm is not None:
             x = self.emb_layer_norm(x)
 
-        x = self.dropout(x)
+        x = self.dropout_module(x)
 
         # account for padding while computing the representation
         if padding_mask is not None:
