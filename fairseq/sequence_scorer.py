@@ -12,12 +12,13 @@ from fairseq import utils
 class SequenceScorer(object):
     """Scores the target for a given source sentence."""
 
-    def __init__(self, tgt_dict, softmax_batch=None, compute_alignment=False, eos=None):
+    def __init__(self, tgt_dict, softmax_batch=None, compute_alignment=False, retain_dropout_k=None, eos=None):
         self.pad = tgt_dict.pad()
         self.eos = tgt_dict.eos() if eos is None else eos
         self.softmax_batch = softmax_batch or sys.maxsize
         assert self.softmax_batch > 0
         self.compute_alignment = compute_alignment
+        self.retain_dropout_k = retain_dropout_k
 
     @torch.no_grad()
     def generate(self, models, sample, **kwargs):
@@ -51,9 +52,13 @@ class SequenceScorer(object):
         # compute scores for each model in the ensemble
         avg_probs = None
         avg_attn = None
-        for model in models:
-            model.eval()
-            decoder_out = model(**net_input)
+
+        model_idx_iter = range(self.retain_dropout_k) if self.retain_dropout_k is not None else range(len(models))
+
+        for model_idx_ in model_idx_iter:
+            model_idx = 0 if self.retain_dropout_k is not None else model_idx_
+            models[model_idx].eval()
+            decoder_out = models[model_idx](**net_input)
             attn = decoder_out[1] if len(decoder_out) > 1 else None
             if type(attn) is dict:
                 attn = attn.get('attn', None)
@@ -62,7 +67,7 @@ class SequenceScorer(object):
             probs, idx = None, 0
             for bd, tgt, is_single in batched:
                 sample['target'] = tgt
-                curr_prob = model.get_normalized_probs(bd, log_probs=len(models) == 1, sample=sample).data
+                curr_prob = models[model_idx].get_normalized_probs(bd, log_probs=len(model_idx_iter) == 1, sample=sample).data
                 if is_single:
                     probs = gather_target_probs(curr_prob, orig_target)
                 else:
@@ -87,11 +92,11 @@ class SequenceScorer(object):
                     avg_attn = attn
                 else:
                     avg_attn.add_(attn)
-        if len(models) > 1:
-            avg_probs.div_(len(models))
+        if len(model_idx_iter) > 1:
+            avg_probs.div_(len(model_idx_iter))
             avg_probs.log_()
             if avg_attn is not None:
-                avg_attn.div_(len(models))
+                avg_attn.div_(len(model_idx_iter))
 
         bsz = avg_probs.size(0)
         hypos = []

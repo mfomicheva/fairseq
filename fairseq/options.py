@@ -599,6 +599,8 @@ def add_generation_args(parser):
                        help='if set, decoding returns the whole history of iterative refinement')
     group.add_argument('--retain-dropout', action='store_true',
                        help='Use dropout at inference time')
+    group.add_argument('--retain-dropout-k', type=int, default=None,
+                       help='Number of forward passes for inference with dropout')
     group.add_argument('--exclude-dropout-modules', default=None, nargs='+', type=str,
                        help='Exclude specified modules when using dropout at inference time.')
 

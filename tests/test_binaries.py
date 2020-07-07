@@ -94,7 +94,7 @@ class TestTranslation(unittest.TestCase):
                 generate_main(data_dir, ['--skip-invalid-size-inputs-valid-test'])
 
     def test_generation(self):
-        with contextlib.redirect_stdout(StringIO()):
+        # with contextlib.redirect_stdout(StringIO()):
             with tempfile.TemporaryDirectory('test_sampling') as data_dir:
                 create_dummy_data(data_dir)
                 preprocess_translation_data(data_dir)
@@ -123,6 +123,11 @@ class TestTranslation(unittest.TestCase):
                 ])
                 generate_main(data_dir, [
                     '--retain-dropout',
+                ])
+                generate_main(data_dir, [
+                    '--retain-dropout',
+                    '--retain-dropout-k', '2',
+                    '--score-reference',
                 ])
                 with self.assertRaises(ValueError):
                     generate_main(data_dir, [
@@ -942,18 +947,18 @@ def generate_main(data_dir, extra_flags=None):
             '--no-progress-bar',
         ] + (extra_flags or []),
     )
-
     # evaluate model in batch mode
     generate.main(generate_args)
 
     # evaluate model interactively
-    generate_args.buffer_size = 0
-    generate_args.input = '-'
-    generate_args.max_sentences = None
-    orig_stdin = sys.stdin
-    sys.stdin = StringIO('h e l l o\n')
-    interactive.main(generate_args)
-    sys.stdin = orig_stdin
+    if not '--score-reference' in extra_flags:
+        generate_args.buffer_size = 0
+        generate_args.input = '-'
+        generate_args.max_sentences = None
+        orig_stdin = sys.stdin
+        sys.stdin = StringIO('h e l l o\n')
+        interactive.main(generate_args)
+        sys.stdin = orig_stdin
 
 
 def preprocess_lm_data(data_dir):
@@ -1207,6 +1212,7 @@ def quantize_language_model(data_dir, arch, extra_flags=None, run_validation=Fal
         ] + (extra_flags or []),
     )
     train.main(quantize_args)
+
 
 if __name__ == '__main__':
     unittest.main()
