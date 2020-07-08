@@ -161,5 +161,6 @@ class SequenceScorer(object):
                 'positional_unc_total': unc_total_ij.tolist(),
                 'unc_data': unc_data_i,
                 'unc_total': unc_total_i,
+                'unc_model': unc_total_i - unc_data_i,
             }])
         return hypos
