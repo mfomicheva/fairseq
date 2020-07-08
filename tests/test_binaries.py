@@ -94,7 +94,7 @@ class TestTranslation(unittest.TestCase):
                 generate_main(data_dir, ['--skip-invalid-size-inputs-valid-test'])
 
     def test_generation(self):
-        # with contextlib.redirect_stdout(StringIO()):
+        with contextlib.redirect_stdout(StringIO()):
             with tempfile.TemporaryDirectory('test_sampling') as data_dir:
                 create_dummy_data(data_dir)
                 preprocess_translation_data(data_dir)

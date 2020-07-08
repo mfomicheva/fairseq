@@ -238,6 +238,12 @@ def _main(args, output_file):
                     if args.print_step:
                         print('I-{}\t{}'.format(sample_id, hypo['steps']), file=output_file)
 
+                    if args.retain_dropout_k:
+                        print('UDW-{}\t{}'.format(sample_id, ' '.join(['{:.4f}'.format(s) for s in hypo['positional_unc_data']])), file=output_file)
+                        print('UD-{}\t{}'.format(sample_id, hypo['unc_data']), file=output_file)
+                        print('UTW-{}\t{}'.format(sample_id, ' '.join(['{:.4f}'.format(s) for s in hypo['positional_unc_total']])), file=output_file)
+                        print('UT-{}\t{}'.format(sample_id, hypo['unc_total']), file=output_file)
+
                     if getattr(args, 'retain_iter_history', False):
                         for step, h in enumerate(hypo['history']):
                             _, h_str, _ = utils.post_process_prediction(
