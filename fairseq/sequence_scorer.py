@@ -159,6 +159,7 @@ class SequenceScorer(object):
                 'positional_scores': avg_probs_i,
                 'positional_unc_data': unc_data_ij.tolist(),
                 'positional_unc_total': unc_total_ij.tolist(),
+                'positional_unc_model': (unc_total_ij - unc_data_ij).tolist(),
                 'unc_data': unc_data_i,
                 'unc_total': unc_total_i,
                 'unc_model': unc_total_i - unc_data_i,
