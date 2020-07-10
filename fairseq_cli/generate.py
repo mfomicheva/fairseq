@@ -238,12 +238,12 @@ def _main(args, output_file):
                     if args.print_step:
                         print('I-{}\t{}'.format(sample_id, hypo['steps']), file=output_file)
 
+                    print('UW-{}\t{}'.format(sample_id, ' '.join(['{:.4f}'.format(s) for s in hypo['positional_unc_total']])), file=output_file)
+                    print('U-{}\t{}'.format(sample_id, hypo['unc_total']), file=output_file)
                     if args.retain_dropout_k:
                         print('AW-{}\t{}'.format(sample_id, ' '.join(['{:.4f}'.format(s) for s in hypo['positional_unc_data']])), file=output_file)
-                        print('UW-{}\t{}'.format(sample_id, ' '.join(['{:.4f}'.format(s) for s in hypo['positional_unc_total']])), file=output_file)
                         print('MW-{}\t{}'.format(sample_id, ' '.join(['{:.4f}'.format(s) for s in hypo['positional_unc_model']])), file=output_file)
                         print('A-{}\t{}'.format(sample_id, hypo['unc_data']), file=output_file)
-                        print('U-{}\t{}'.format(sample_id, hypo['unc_total']), file=output_file)
                         print('M-{}\t{}'.format(sample_id, hypo['unc_model']), file=output_file)
 
                     if getattr(args, 'retain_iter_history', False):
