@@ -180,8 +180,10 @@ class SequenceScorer(object):
             idx_end_padding = len(net_input['src_tokens'][i]) - src_length
             keep = torch.tensor(np.random.rand(src_length - 1) >= self.drop_tokens_proba)
             to_replace = net_input['src_tokens'][i][idx_end_padding:-1]
-            replace_with = torch.tensor([self.blank_id])
-            replace_with = replace_with.repeat(to_replace.size(0))
+
             device = to_replace.device
+            replace_with = torch.tensor([self.blank_id])
+            replace_with = replace_with.repeat(to_replace.size(0).to(device))
+
             replacement = torch.where(keep.to(device), to_replace, replace_with)
             net_input['src_tokens'][i][idx_end_padding:-1] = replacement
