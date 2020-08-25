@@ -234,7 +234,9 @@ class FairseqTask(object):
             return SequenceScorer(
                 self.target_dictionary,
                 compute_alignment=getattr(args, "print_alignment", False),
-                retain_dropout_k=getattr(args, "retain_dropout_k", None),
+                num_stochastic_passes=getattr(args, "num_stochastic_passes", None),
+                drop_tokens_proba=getattr(args, "drop_tokens_proba", None),
+                src_dict=self.source_dictionary,
             )
 
         from fairseq.sequence_generator import (

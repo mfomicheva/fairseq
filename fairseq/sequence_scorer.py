@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import copy
+import numpy as np
 import torch
 import sys
 
@@ -14,18 +16,23 @@ from torch import distributions
 class SequenceScorer(object):
     """Scores the target for a given source sentence."""
 
-    def __init__(self, tgt_dict, softmax_batch=None, compute_alignment=False, retain_dropout_k=None, eos=None):
+    def __init__(
+            self, tgt_dict, src_dict=None, softmax_batch=None, compute_alignment=False, num_stochastic_passes=None,
+            eos=None, drop_tokens_proba=None):
         self.pad = tgt_dict.pad()
         self.eos = tgt_dict.eos() if eos is None else eos
+        self.blank_id = src_dict.unk() if src_dict is not None and getattr(src_dict, 'unk', None) else None
         self.softmax_batch = softmax_batch or sys.maxsize
         assert self.softmax_batch > 0
         self.compute_alignment = compute_alignment
-        self.retain_dropout_k = retain_dropout_k
+        self.num_stochastic_passes = num_stochastic_passes
+        self.drop_tokens_proba = drop_tokens_proba
 
     @torch.no_grad()
     def generate(self, models, sample, **kwargs):
         """Score a batch of translations."""
         net_input = sample['net_input']
+        orig_target = sample['target']
 
         def batch_for_softmax(dec_out, target):
             # assumes decoder_out[0] is the only thing needed (may not be correct for future models!)
@@ -52,8 +59,6 @@ class SequenceScorer(object):
         def softmax_entropy(probs):
             return distributions.Categorical(probs=probs).entropy().data
 
-        orig_target = sample['target']
-
         # compute scores for each model in the ensemble
         avg_probs = None
         avg_probs_v = None
@@ -61,12 +66,15 @@ class SequenceScorer(object):
 
         h_before_avg = None
 
-        model_idx_iter = range(self.retain_dropout_k) if self.retain_dropout_k is not None else range(len(models))
+        model_idx_iter = range(self.num_stochastic_passes) if self.num_stochastic_passes is not None else range(len(models))
 
         for model_idx_ in model_idx_iter:
-            model_idx = 0 if self.retain_dropout_k is not None else model_idx_
+            model_idx = 0 if self.num_stochastic_passes is not None else model_idx_
             models[model_idx].eval()
-            decoder_out = models[model_idx](**net_input)
+            net_input_copy = copy.deepcopy(net_input)
+            if self.drop_tokens_proba is not None:
+                self.drop_source_tokens(net_input_copy)
+            decoder_out = models[model_idx](**net_input_copy)
             attn = decoder_out[1] if len(decoder_out) > 1 else None
             if type(attn) is dict:
                 attn = attn.get('attn', None)
@@ -165,3 +173,14 @@ class SequenceScorer(object):
                 'unc_model': unc_total_i - unc_data_i,
             }])
         return hypos
+
+    def drop_source_tokens(self, net_input):
+        for i in range(net_input['src_tokens'].size(0)):
+            src_length = net_input['src_lengths'][i]
+            idx_end_padding = len(net_input['src_tokens'][i]) - src_length
+            keep = torch.tensor(np.random.rand(src_length - 1) >= self.drop_tokens_proba)
+            to_replace = net_input['src_tokens'][i][idx_end_padding:-1]
+            replace_with = torch.tensor([self.blank_id])
+            replace_with = replace_with.repeat(to_replace.size(0))
+            replacement = torch.where(keep, to_replace, replace_with)
+            net_input['src_tokens'][i][idx_end_padding:-1] = replacement

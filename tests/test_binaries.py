@@ -125,8 +125,8 @@ class TestTranslation(unittest.TestCase):
                     '--retain-dropout',
                 ])
                 generate_main(data_dir, [
-                    '--retain-dropout',
-                    '--retain-dropout-k', '2',
+                    '--drop-tokens-proba', '0.3',
+                    '--num-stochastic-passes', '2',
                     '--score-reference',
                 ])
                 with self.assertRaises(ValueError):

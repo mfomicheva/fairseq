@@ -597,12 +597,14 @@ def add_generation_args(parser):
                        help='if set, the last checkpoint are assumed to be a reranker to rescore the translations'),
     group.add_argument('--retain-iter-history', action='store_true',
                        help='if set, decoding returns the whole history of iterative refinement')
+    group.add_argument('--num-stochastic-passes', type=int, default=None,
+                       help='Number of forward passes for inference with dropout')
     group.add_argument('--retain-dropout', action='store_true',
                        help='Use dropout at inference time')
-    group.add_argument('--retain-dropout-k', type=int, default=None,
-                       help='Number of forward passes for inference with dropout')
     group.add_argument('--exclude-dropout-modules', default=None, nargs='+', type=str,
                        help='Exclude specified modules when using dropout at inference time.')
+    group.add_argument('--drop-tokens-proba', type=float, default=None,
+                       help='Probability of dropping source tokens for scoring')
 
     # special decoding format for advanced decoding.
     group.add_argument('--decoding-format', default=None, type=str, choices=['unigram', 'ensemble', 'vote', 'dp', 'bs'])
