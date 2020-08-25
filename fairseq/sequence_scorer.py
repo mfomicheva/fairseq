@@ -183,7 +183,7 @@ class SequenceScorer(object):
 
             device = to_replace.device
             replace_with = torch.tensor([self.blank_id])
-            replace_with = replace_with.repeat(to_replace.size(0).to(device))
+            replace_with = replace_with.repeat(to_replace.size(0)).to(device)
 
             replacement = torch.where(keep.to(device), to_replace, replace_with)
             net_input['src_tokens'][i][idx_end_padding:-1] = replacement
