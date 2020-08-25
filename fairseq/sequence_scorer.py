@@ -186,7 +186,7 @@ class SequenceScorer(object):
             device = to_replace.device
             if self.drop_tokens_random:
                 assert self.src_vocab_size
-                replace_with = torch.randint(3, self.src_vocab_size - 1, (to_replace.size(0),))
+                replace_with = torch.randint(3, self.src_vocab_size - 1, (to_replace.size(0),)).to(device)
             else:
                 replace_with = torch.tensor([self.blank_id])
                 replace_with = replace_with.repeat(to_replace.size(0)).to(device)
