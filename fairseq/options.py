@@ -605,7 +605,8 @@ def add_generation_args(parser):
                        help='Exclude specified modules when using dropout at inference time.')
     group.add_argument('--drop-tokens-proba', type=float, default=None,
                        help='Probability of dropping source tokens for scoring')
-
+    group.add_argument('--drop-tokens-random', default=False, action='store_true',
+                       help='Substitute source tokens by random tokens')
     # special decoding format for advanced decoding.
     group.add_argument('--decoding-format', default=None, type=str, choices=['unigram', 'ensemble', 'vote', 'dp', 'bs'])
     # fmt: on

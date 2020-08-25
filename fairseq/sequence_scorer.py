@@ -18,15 +18,17 @@ class SequenceScorer(object):
 
     def __init__(
             self, tgt_dict, src_dict=None, softmax_batch=None, compute_alignment=False, num_stochastic_passes=None,
-            eos=None, drop_tokens_proba=None):
+            eos=None, drop_tokens_proba=None, drop_tokens_random=False):
         self.pad = tgt_dict.pad()
         self.eos = tgt_dict.eos() if eos is None else eos
         self.blank_id = src_dict.unk() if src_dict is not None and getattr(src_dict, 'unk', None) else None
+        self.src_vocab_size = len(src_dict) if src_dict is not None else None
         self.softmax_batch = softmax_batch or sys.maxsize
         assert self.softmax_batch > 0
         self.compute_alignment = compute_alignment
         self.num_stochastic_passes = num_stochastic_passes
         self.drop_tokens_proba = drop_tokens_proba
+        self.drop_tokens_random = drop_tokens_random
 
     @torch.no_grad()
     def generate(self, models, sample, **kwargs):
@@ -182,8 +184,12 @@ class SequenceScorer(object):
             to_replace = net_input['src_tokens'][i][idx_end_padding:-1]
 
             device = to_replace.device
-            replace_with = torch.tensor([self.blank_id])
-            replace_with = replace_with.repeat(to_replace.size(0)).to(device)
+            if self.drop_tokens_random:
+                assert self.src_vocab_size
+                replace_with = torch.randint(3, self.src_vocab_size - 1, (to_replace.size(0),))
+            else:
+                replace_with = torch.tensor([self.blank_id])
+                replace_with = replace_with.repeat(to_replace.size(0)).to(device)
 
             replacement = torch.where(keep.to(device), to_replace, replace_with)
             net_input['src_tokens'][i][idx_end_padding:-1] = replacement

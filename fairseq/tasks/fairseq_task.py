@@ -236,6 +236,7 @@ class FairseqTask(object):
                 compute_alignment=getattr(args, "print_alignment", False),
                 num_stochastic_passes=getattr(args, "num_stochastic_passes", None),
                 drop_tokens_proba=getattr(args, "drop_tokens_proba", None),
+                drop_tokens_random=getattr(args, "drop_tokens_random", False),
                 src_dict=self.source_dictionary,
             )
 

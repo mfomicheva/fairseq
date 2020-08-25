@@ -126,6 +126,7 @@ class TestTranslation(unittest.TestCase):
                 ])
                 generate_main(data_dir, [
                     '--drop-tokens-proba', '0.3',
+                    '--drop-tokens-random',
                     '--num-stochastic-passes', '2',
                     '--score-reference',
                 ])
