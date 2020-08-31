@@ -73,8 +73,8 @@ def read_output(meteor_output_path, n_repeats):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--input')
-    parser.add_argument('-n', '--repeat_times', type=int)
+    parser.add_argument('-i', '--infile')
+    parser.add_argument('-n', '--repetitions', type=int)
     parser.add_argument('-m', '--meteor')
     parser.add_argument('-o', '--output')
     args = parser.parse_args()
