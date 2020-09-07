@@ -204,10 +204,16 @@ def load_model_ensemble_and_task(filenames, arg_overrides=None, task=None, stric
         if task is None:
             task = tasks.setup_task(args)
 
+        # create multiple copies of the model for dropout inference
+        num_copies = 1
+        if args.num_stochastic_passes is not None and args.retain_dropout:
+            num_copies = args.num_stochastic_passes
+
         # build model for ensemble
-        model = task.build_model(args)
-        model.load_state_dict(state["model"], strict=strict, args=args)
-        ensemble.append(model)
+        for _ in range(num_copies):
+            model = task.build_model(args)
+            model.load_state_dict(state["model"], strict=strict, args=args)
+            ensemble.append(model)
     return ensemble, args, task
 
 

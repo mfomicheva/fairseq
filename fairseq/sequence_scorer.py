@@ -68,10 +68,7 @@ class SequenceScorer(object):
 
         h_before_avg = None
 
-        model_idx_iter = range(self.num_stochastic_passes) if self.num_stochastic_passes is not None else range(len(models))
-
-        for model_idx_ in model_idx_iter:
-            model_idx = 0 if self.num_stochastic_passes is not None else model_idx_
+        for model_idx in range(len(models)):
             models[model_idx].eval()
             net_input_copy = copy.deepcopy(net_input)
             if self.drop_tokens_proba is not None:
