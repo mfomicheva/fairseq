@@ -75,7 +75,7 @@ class SequenceScorer(object):
             net_input_copy = copy.deepcopy(net_input)
             if self.drop_tokens_proba is not None:
                 self.drop_source_tokens(net_input_copy)
-            decoder_out = models[model_idx](**net_input_copy).div_(self.temperature)
+            decoder_out = models[model_idx](**net_input_copy)
             attn = decoder_out[1] if len(decoder_out) > 1 else None
             if type(attn) is dict:
                 attn = attn.get('attn', None)
@@ -85,6 +85,7 @@ class SequenceScorer(object):
             for bd, tgt, is_single in batched:
                 assert is_single
                 sample['target'] = tgt
+                bd[0][:, -1:, :].div_(self.temperature)
                 curr_prob = models[model_idx].get_normalized_probs(bd, log_probs=len(model_idx_iter) == 1, sample=sample).data  # [B, T, V]
                 curr_entr = softmax_entropy(curr_prob)
                 if avg_probs_v is None:
