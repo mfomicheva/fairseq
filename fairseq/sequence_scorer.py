@@ -85,7 +85,7 @@ class SequenceScorer(object):
             for bd, tgt, is_single in batched:
                 assert is_single
                 sample['target'] = tgt
-                bd[0][:, -1:, :].div_(self.temperature)
+                bd = (bd[0].div_(self.temperature), bd[1])
                 curr_prob = models[model_idx].get_normalized_probs(bd, log_probs=len(model_idx_iter) == 1, sample=sample).data  # [B, T, V]
                 curr_entr = softmax_entropy(curr_prob)
                 if avg_probs_v is None:
