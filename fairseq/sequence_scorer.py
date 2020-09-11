@@ -18,7 +18,7 @@ class SequenceScorer(object):
 
     def __init__(
             self, tgt_dict, src_dict=None, softmax_batch=None, compute_alignment=False, num_stochastic_passes=None,
-            eos=None, drop_tokens_proba=None, drop_tokens_random=False):
+            eos=None, drop_tokens_proba=None, drop_tokens_random=False, temperature=1.0,):
         self.pad = tgt_dict.pad()
         self.eos = tgt_dict.eos() if eos is None else eos
         self.blank_id = src_dict.unk() if src_dict is not None and getattr(src_dict, 'unk', None) else None
@@ -29,6 +29,7 @@ class SequenceScorer(object):
         self.num_stochastic_passes = num_stochastic_passes
         self.drop_tokens_proba = drop_tokens_proba
         self.drop_tokens_random = drop_tokens_random
+        self.temperature = temperature
 
     @torch.no_grad()
     def generate(self, models, sample, **kwargs):
@@ -74,7 +75,7 @@ class SequenceScorer(object):
             net_input_copy = copy.deepcopy(net_input)
             if self.drop_tokens_proba is not None:
                 self.drop_source_tokens(net_input_copy)
-            decoder_out = models[model_idx](**net_input_copy)
+            decoder_out = models[model_idx](**net_input_copy).div_(self.temperature)
             attn = decoder_out[1] if len(decoder_out) > 1 else None
             if type(attn) is dict:
                 attn = attn.get('attn', None)

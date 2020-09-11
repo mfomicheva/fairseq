@@ -238,6 +238,7 @@ class FairseqTask(object):
                 drop_tokens_proba=getattr(args, "drop_tokens_proba", None),
                 drop_tokens_random=getattr(args, "drop_tokens_random", False),
                 src_dict=self.source_dictionary,
+                temperature=getattr(args, "temperature", 1.0),
             )
 
         from fairseq.sequence_generator import (
