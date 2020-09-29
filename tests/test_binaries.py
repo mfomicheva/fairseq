@@ -952,7 +952,7 @@ def generate_main(data_dir, extra_flags=None):
     generate.main(generate_args)
 
     # evaluate model interactively
-    if not '--score-reference' in extra_flags:
+    if not '--score-reference' in extra_flags and not '--retain-dropout' in extra_flags:
         generate_args.buffer_size = 0
         generate_args.input = '-'
         generate_args.max_sentences = None
