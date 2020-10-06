@@ -183,7 +183,7 @@ class SequenceScorer(object):
                 'unc_total': unc_total_i if len(model_idx_iter) > 1 else None,
                 'unc_model': unc_total_i - unc_data_i if len(model_idx_iter) > 1 else None,
                 'positional_kls': token_kls,
-                'kls': sum(token_kls)/tgt_len,
+                'kls': min(token_kls),
             }])
         return hypos
 
