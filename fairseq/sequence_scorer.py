@@ -86,7 +86,7 @@ class SequenceScorer(object):
                 assert is_single
                 sample['target'] = tgt
                 bd = (bd[0].div_(self.temperature), bd[1])
-                curr_prob = models[model_idx].get_normalized_probs(bd, log_probs=len(model_idx_iter) == 1, sample=sample).data  # [B, T, V]
+                curr_prob = models[model_idx].get_normalized_probs(bd, log_probs=False, sample=sample).data  # [B, T, V]
                 curr_entr = softmax_entropy(curr_prob)
                 if avg_probs_v is None:
                     avg_probs_v = curr_prob
@@ -121,11 +121,11 @@ class SequenceScorer(object):
                     avg_attn = attn
                 else:
                     avg_attn.add_(attn)
+        avg_probs.log_()
         if len(model_idx_iter) > 1:
             h_before_avg.div_(len(model_idx_iter))
             avg_probs.div_(len(model_idx_iter))
             avg_probs_v.div_(len(model_idx_iter))
-            avg_probs.log_()
             if avg_attn is not None:
                 avg_attn.div_(len(model_idx_iter))
 
@@ -139,6 +139,15 @@ class SequenceScorer(object):
             ref = utils.strip_pad(sample['target'][i, start_idxs[i]:], self.pad) \
                 if sample['target'] is not None else None
             tgt_len = ref.numel()
+
+            token_kls = []
+            for tokenid in range(tgt_len):
+                if tokenid != 0:
+                    token_kls.append(torch.distributions.kl.kl_divergence(
+                        distributions.Categorical(probs=avg_probs_v[i, tokenid - 1, :]),
+                        distributions.Categorical(probs=avg_probs_v[i, tokenid, :]),
+                    ))
+
             avg_probs_i = avg_probs[i][start_idxs[i]:start_idxs[i] + tgt_len]
             score_i = avg_probs_i.sum() / tgt_len
 
@@ -167,12 +176,14 @@ class SequenceScorer(object):
                 'attention': avg_attn_i,
                 'alignment': alignment,
                 'positional_scores': avg_probs_i,
-                'positional_unc_data': unc_data_ij.tolist(),
-                'positional_unc_total': unc_total_ij.tolist(),
-                'positional_unc_model': (unc_total_ij - unc_data_ij).tolist(),
-                'unc_data': unc_data_i,
-                'unc_total': unc_total_i,
-                'unc_model': unc_total_i - unc_data_i,
+                'positional_unc_data': unc_data_ij.tolist() if len(model_idx_iter) > 1 else ['None'],
+                'positional_unc_total': unc_total_ij.tolist() if len(model_idx_iter) > 1 else ['None'],
+                'positional_unc_model': (unc_total_ij - unc_data_ij).tolist() if len(model_idx_iter) > 1 else ['None'],
+                'unc_data': unc_data_i if len(model_idx_iter) > 1 else None,
+                'unc_total': unc_total_i if len(model_idx_iter) > 1 else None,
+                'unc_model': unc_total_i - unc_data_i if len(model_idx_iter) > 1 else None,
+                'positional_kls': token_kls,
+                'kls': sum(token_kls)/tgt_len,
             }])
         return hypos
 
