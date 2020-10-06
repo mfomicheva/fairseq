@@ -244,7 +244,7 @@ def _main(args, output_file):
                         print('AW-{}\t{}'.format(sample_id, ' '.join(['{}'.format(s) for s in hypo['positional_unc_data']])), file=output_file)
                         print('MW-{}\t{}'.format(sample_id, ' '.join(['{}'.format(s) for s in hypo['positional_unc_model']])), file=output_file)
                         print('KW-{}\t{}'.format(sample_id, ' '.join(['{}'.format(s) for s in hypo['positional_kls']])), file=output_file)
-                        print('K-{}\t{}'.format(sample_id, ' '.join(['{}'.format(s) for s in hypo['kls']])), file=output_file)
+                        print('K-{}\t{}'.format(sample_id, hypo['kls']), file=output_file)
                         print('A-{}\t{}'.format(sample_id, hypo['unc_data']), file=output_file)
                         print('M-{}\t{}'.format(sample_id, hypo['unc_model']), file=output_file)
 
