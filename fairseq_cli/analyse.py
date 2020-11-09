@@ -56,8 +56,6 @@ def main(args):
 
         for i, sample_id in enumerate(sample_tm['id'].tolist()):
             assert len(lm_hypos[i][0]['pmfs']) == len(tm_hypos[i][0]['pmfs'])
-            print(lm_hypos[i][0])
-            print(tm_hypos[i][0])
             for tok_idx in range(len(lm_hypos[i][0]['pmfs'])):
                 lm_hs.append(lm_hypos[i][0]['pmfs'][tok_idx].entropy().data)
                 tm_hs.append(tm_hypos[i][0]['pmfs'][tok_idx].entropy().data)

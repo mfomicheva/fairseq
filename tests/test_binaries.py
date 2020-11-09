@@ -971,7 +971,6 @@ def analyse_main(tm_dir, lm_dir, extra_flags=None):
             '--no-progress-bar',
             '--batch-size', '64',
             '--sample-break-mode', 'eos',
-            '--add-bos-token',
             '--score-reference',
             '--analysis-dir', tm_dir,
         ] + (extra_flags or []),
