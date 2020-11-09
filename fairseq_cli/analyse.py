@@ -71,6 +71,8 @@ def main(args):
                     'mode_tm': torch.argmax(tm_hypos[i][0]['pmfs'][tstep].probs).cpu().data.numpy(),
                     'entropy_lm': lm_hypos[i][0]['pmfs'][tstep].entropy().cpu().data.numpy(),
                     'entropy_tm': tm_hypos[i][0]['pmfs'][tstep].entropy().cpu().data.numpy(),
+                    'lm_proba': lm_hypos[i][0]['positional_scores'][tstep].cpu().data.numpy(),
+                    'tm_proba': tm_hypos[i][0]['positional_scores'][tstep].cpu().data.numpy(),
                 }
                 stats_data.append(stats_data_it)
                 lm_hs.append(stats_data_it['entropy_lm'])
