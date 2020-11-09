@@ -51,6 +51,11 @@ def main(args):
     tm_hs = []
     stats_data = []
     scores = {}
+
+    prob = 1/len(tm_task.tgt_dict)
+    probs = torch.empty(len(tm_task.tgt_dict)).fill_(prob)
+    uniform = torch.distributions.Categorical(probs=probs)
+
     for _, sample_tm in zip(lm_iterator, tm_iterator):
         sample_lm = deepcopy(sample_tm)
         sample_lm['net_input']['src_tokens'] = sample_tm['net_input']['prev_output_tokens']
@@ -76,6 +81,8 @@ def main(args):
                     'tm_proba': tm_hypos[i][0]['positional_scores'][tstep].cpu().data.numpy(),
                     'kl_tm_lm': torch.distributions.kl_divergence(tm_hypos[i][0]['pmfs'][tstep], lm_hypos[i][0]['pmfs'][tstep]).mean().cpu().data.numpy(),
                     'kl_lm_tm': torch.distributions.kl_divergence(lm_hypos[i][0]['pmfs'][tstep], tm_hypos[i][0]['pmfs'][tstep]).mean().cpu().data.numpy(),
+                    'kl_tm_u': torch.distributions.kl_divergence(tm_hypos[i][0]['pmfs'][tstep], uniform).mean().cpu().data.numpy(),
+                    'kl_lm_u': torch.distributions.kl_divergence(lm_hypos[i][0]['pmfs'][tstep], uniform).mean().cpu().data.numpy(),
                 }
                 stats_data.append(stats_data_it)
                 lm_hs.append(stats_data_it['entropy_lm'])
