@@ -74,6 +74,8 @@ def main(args):
                     'entropy_tm': tm_hypos[i][0]['pmfs'][tstep].entropy().cpu().data.numpy(),
                     'lm_proba': lm_hypos[i][0]['positional_scores'][tstep].cpu().data.numpy(),
                     'tm_proba': tm_hypos[i][0]['positional_scores'][tstep].cpu().data.numpy(),
+                    'kl_tm_lm': torch.distributions.kl_divergence(tm_hypos[i][0]['pmfs'][tstep], lm_hypos[i][0]['pmfs'][tstep]).mean(),
+                    'kl_lm_tm': torch.distributions.kl_divergence(lm_hypos[i][0]['pmfs'][tstep], tm_hypos[i][0]['pmfs'][tstep]).mean(),
                 }
                 stats_data.append(stats_data_it)
                 lm_hs.append(stats_data_it['entropy_lm'])
