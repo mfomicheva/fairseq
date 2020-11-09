@@ -65,12 +65,12 @@ def main(args):
             for tstep in range(len(lm_hypos[i][0]['pmfs'])):
                 stats_data_it = {
                     'sentid': sample_id,
-                    'tokid': lm_hypos[i][0]['tokens'][tstep].numpy(),
+                    'tokid': lm_hypos[i][0]['tokens'][tstep].cpu().data.numpy(),
                     'pos': tstep,
-                    'mode_lm': torch.argmax(lm_hypos[i][0]['pmfs'][tstep].probs).numpy(),
-                    'mode_tm': torch.argmax(tm_hypos[i][0]['pmfs'][tstep].probs).numpy(),
-                    'entropy_lm': lm_hypos[i][0]['pmfs'][tstep].entropy().data.numpy(),
-                    'entropy_tm': tm_hypos[i][0]['pmfs'][tstep].entropy().data.numpy(),
+                    'mode_lm': torch.argmax(lm_hypos[i][0]['pmfs'][tstep].probs).cpu().data.numpy(),
+                    'mode_tm': torch.argmax(tm_hypos[i][0]['pmfs'][tstep].probs).cpu().data.numpy(),
+                    'entropy_lm': lm_hypos[i][0]['pmfs'][tstep].entropy().cpu().data.numpy(),
+                    'entropy_tm': tm_hypos[i][0]['pmfs'][tstep].entropy().cpu().data.numpy(),
                 }
                 stats_data.append(stats_data_it)
                 lm_hs.append(stats_data_it['entropy_lm'])
