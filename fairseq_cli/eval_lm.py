@@ -135,7 +135,7 @@ def main(parsed_args, **unused_kwargs):
     )
 
     gen_timer = StopwatchMeter()
-    scorer = SequenceScorer(task.target_dictionary, args.softmax_batch)
+    scorer = SequenceScorer(task.target_dictionary, softmax_batch=args.softmax_batch)
 
     score_sum = 0.
     count = 0

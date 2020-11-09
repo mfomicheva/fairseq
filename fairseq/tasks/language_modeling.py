@@ -27,6 +27,7 @@ from fairseq.data import (
     TruncatedDictionary,
 )
 from fairseq.tasks import FairseqTask, register_task
+from fairseq.tasks.translation_with_lm import TranslationLanguageModelTask
 
 
 logger = logging.getLogger(__name__)
@@ -63,10 +64,11 @@ class LanguageModelingTask(FairseqTask):
     """
 
     @staticmethod
-    def add_args(parser):
+    def add_args(parser, ignore_common_arguments=False):
         """Add task-specific arguments to the parser."""
         # fmt: off
-        parser.add_argument('data', help='path to data directory')
+        if not ignore_common_arguments:
+            TranslationLanguageModelTask.add_args(parser)
         parser.add_argument('--sample-break-mode', default='none',
                             choices=['none', 'complete', 'complete_doc', 'eos'],
                             help='If omitted or "none", fills each sample with tokens-per-sample '
@@ -86,8 +88,6 @@ class LanguageModelingTask(FairseqTask):
                             help='include past target')
         parser.add_argument('--add-bos-token', action='store_true',
                             help='prepend beginning of sentence token (<s>)')
-        parser.add_argument('--max-target-positions', type=int, metavar='N',
-                            help='max number of tokens in the target sequence')
         parser.add_argument('--truncate-sequence', action='store_true', default=False,
                             help='truncate sequences to --tokens-per-sample')
         # fmt: on
@@ -254,7 +254,6 @@ class LanguageModelingTask(FairseqTask):
                 prefix_tokens = sample["net_input"]["src_tokens"]
                 if prefix_tokens[:, 0].eq(bos_token).all():
                     prefix_tokens = prefix_tokens[:, 1:]
-
             return generator.generate(
                 models, sample, prefix_tokens=prefix_tokens, bos_token=bos_token,
             )

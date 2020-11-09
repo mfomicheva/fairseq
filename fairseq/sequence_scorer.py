@@ -140,13 +140,9 @@ class SequenceScorer(object):
                 if sample['target'] is not None else None
             tgt_len = ref.numel()
 
-            token_kls = []
+            pmfs = []
             for tokenid in range(tgt_len):
-                if tokenid != 0:
-                    token_kls.append(torch.distributions.kl.kl_divergence(
-                        distributions.Categorical(probs=avg_probs_v[i, tokenid - 1, :]),
-                        distributions.Categorical(probs=avg_probs_v[i, tokenid, :]),
-                    ))
+                pmfs.append(distributions.Categorical(probs=avg_probs_v[i, tokenid, :]))
 
             avg_probs_i = avg_probs[i][start_idxs[i]:start_idxs[i] + tgt_len]
             score_i = avg_probs_i.sum() / tgt_len
@@ -182,8 +178,7 @@ class SequenceScorer(object):
                 'unc_data': unc_data_i if len(model_idx_iter) > 1 else None,
                 'unc_total': unc_total_i if len(model_idx_iter) > 1 else None,
                 'unc_model': unc_total_i - unc_data_i if len(model_idx_iter) > 1 else None,
-                'positional_kls': token_kls,
-                'kls': sum(token_kls)/tgt_len,
+                'pmfs': pmfs,
             }])
         return hypos
 

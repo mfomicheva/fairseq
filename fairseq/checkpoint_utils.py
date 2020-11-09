@@ -206,8 +206,11 @@ def load_model_ensemble_and_task(filenames, arg_overrides=None, task=None, stric
 
         # create multiple copies of the model for dropout inference
         num_copies = 1
-        if args.num_stochastic_passes is not None and args.retain_dropout:
-            num_copies = args.num_stochastic_passes
+        try:
+            if args.num_stochastic_passes is not None and args.retain_dropout:
+                num_copies = args.num_stochastic_passes
+        except AttributeError:
+            pass
 
         # build model for ensemble
         for _ in range(num_copies):

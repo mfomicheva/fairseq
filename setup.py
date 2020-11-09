@@ -155,6 +155,7 @@ setup(
             'fairseq-score = fairseq_cli.score:cli_main',
             'fairseq-train = fairseq_cli.train:cli_main',
             'fairseq-validate = fairseq_cli.validate:cli_main',
+            'fairseq-analyse = fairseq_cli.analyse:cli_main',
         ],
     },
     cmdclass=cmdclass,

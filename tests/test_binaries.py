@@ -18,9 +18,14 @@ from fairseq import options
 from fairseq_cli import preprocess
 from fairseq_cli import train
 from fairseq_cli import generate
+from fairseq_cli import analyse
 from fairseq_cli import interactive
 from fairseq_cli import eval_lm
 from fairseq_cli import validate
+
+from fairseq.tasks.translation_with_lm import TranslationLanguageModelTask
+from fairseq.tasks.language_modeling import LanguageModelingTask
+from fairseq.tasks.translation import TranslationTask
 
 
 class TestTranslation(unittest.TestCase):
@@ -92,6 +97,28 @@ class TestTranslation(unittest.TestCase):
                 with self.assertRaises(Exception) as context:
                     generate_main(data_dir)
                 generate_main(data_dir, ['--skip-invalid-size-inputs-valid-test'])
+
+    def test_analyse(self):
+        with tempfile.TemporaryDirectory('test_tm') as tm_dir:
+            with tempfile.TemporaryDirectory('test_lm') as lm_dir:
+                create_dummy_data(tm_dir, num_examples=100, maxlen=20)
+                preprocess_translation_data(tm_dir)
+                train_translation_model(tm_dir, 'transformer_iwslt_de_en')
+
+                os.system('cp %s %s' % (os.path.join(tm_dir, 'dict.out.txt'), os.path.join(lm_dir, 'dict.txt')))
+                os.system('ln -s %s %s' % (os.path.join(tm_dir, 'dict.out.txt'), os.path.join(tm_dir, 'dict.txt')))
+                os.system('ln -s %s %s' % (os.path.join(tm_dir, 'valid.in-out.out.idx'), os.path.join(tm_dir, 'valid.idx')))
+                os.system('ln -s %s %s' % (os.path.join(tm_dir, 'valid.in-out.out.bin'), os.path.join(tm_dir, 'valid.bin')))
+                os.system('cp %s %s' % (os.path.join(tm_dir, 'train.in-out.out.idx'), os.path.join(lm_dir, 'train.idx')))
+                os.system('cp %s %s' % (os.path.join(tm_dir, 'train.in-out.out.bin'), os.path.join(lm_dir, 'train.bin')))
+                os.system('cp %s %s' % (os.path.join(tm_dir, 'valid.in-out.out.idx'), os.path.join(lm_dir, 'valid.idx')))
+                os.system('cp %s %s' % (os.path.join(tm_dir, 'valid.in-out.out.bin'), os.path.join(lm_dir, 'valid.bin')))
+                os.system('cp %s %s' % (os.path.join(tm_dir, 'test.in-out.out.idx'), os.path.join(lm_dir, 'test.idx')))
+                os.system('cp %s %s' % (os.path.join(tm_dir, 'test.in-out.out.bin'), os.path.join(lm_dir, 'test.bin')))
+
+                train_language_model(lm_dir, 'transformer_lm', run_validation=True)
+
+                analyse_main(tm_dir, lm_dir)
 
     def test_generation(self):
         with contextlib.redirect_stdout(StringIO()):
@@ -181,7 +208,7 @@ class TestTranslation(unittest.TestCase):
                 generate_main(data_dir)
 
     def test_transformer(self):
-        with contextlib.redirect_stdout(StringIO()):
+        # with contextlib.redirect_stdout(StringIO()):
             with tempfile.TemporaryDirectory('test_transformer') as data_dir:
                 create_dummy_data(data_dir)
                 preprocess_translation_data(data_dir)
@@ -505,7 +532,7 @@ class TestLanguageModeling(unittest.TestCase):
                 ])
 
     def test_transformer_lm(self):
-        with contextlib.redirect_stdout(StringIO()):
+        # with contextlib.redirect_stdout(StringIO()):
             with tempfile.TemporaryDirectory('test_transformer_lm') as data_dir:
                 create_dummy_data(data_dir)
                 preprocess_lm_data(data_dir)
@@ -904,7 +931,7 @@ def train_translation_model(data_dir, arch, extra_flags=None, task='translation'
             '--save-dir', data_dir,
             '--arch', arch,
             '--lr', '0.05',
-            '--max-tokens', '500',
+            '--max-tokens', '1024',
             '--max-epoch', '1',
             '--no-progress-bar',
             '--distributed-world-size', '1',
@@ -923,11 +950,34 @@ def train_translation_model(data_dir, arch, extra_flags=None, task='translation'
                 data_dir,
                 '--path', os.path.join(data_dir, 'checkpoint_last.pt'),
                 '--valid-subset', 'valid',
-                '--max-tokens', '500',
+                '--max-tokens', '1024',
                 '--no-progress-bar',
             ] + lang_flags + (extra_valid_flags or [])
         )
         validate.main(validate_args)
+
+
+def analyse_main(tm_dir, lm_dir, extra_flags=None):
+    generate_parser = options.get_analysis_parser()
+    TranslationLanguageModelTask.add_args(generate_parser)
+    LanguageModelingTask.add_args(generate_parser, ignore_common_arguments=True)
+    TranslationTask.add_args(generate_parser, ignore_common_arguments=True)
+    generate_args = generate_parser.parse_args(
+        [
+            tm_dir,
+            '--language-models-paths', os.path.join(lm_dir, 'checkpoint_last.pt'),
+            '--translation-models-paths', os.path.join(tm_dir, 'checkpoint_last.pt'),
+            '--gen-subset', 'valid',
+            '--no-progress-bar',
+            '--batch-size', '64',
+            '--sample-break-mode', 'eos',
+            '--add-bos-token',
+            '--score-reference',
+            '--analysis-dir', tm_dir,
+        ] + (extra_flags or []),
+    )
+    # evaluate model in batch mode
+    analyse.main(generate_args)
 
 
 def generate_main(data_dir, extra_flags=None):
@@ -1033,10 +1083,8 @@ def train_language_model(data_dir, arch, extra_flags=None, run_validation=False)
             '--arch', arch,
             '--optimizer', 'adam',
             '--lr', '0.0001',
-            '--criterion', 'adaptive_loss',
-            '--adaptive-softmax-cutoff', '5,10,15',
-            '--max-tokens', '500',
-            '--tokens-per-sample', '500',
+            '--max-tokens', '1024',
+            '--tokens-per-sample', '1024',
             '--save-dir', data_dir,
             '--max-epoch', '1',
             '--no-progress-bar',
@@ -1056,7 +1104,7 @@ def train_language_model(data_dir, arch, extra_flags=None, run_validation=False)
                 data_dir,
                 '--path', os.path.join(data_dir, 'checkpoint_last.pt'),
                 '--valid-subset', 'valid',
-                '--max-tokens', '500',
+                '--max-tokens', '1024',
                 '--no-progress-bar',
             ]
         )

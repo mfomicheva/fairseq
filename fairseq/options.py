@@ -38,6 +38,15 @@ def get_generation_parser(interactive=False, default_task="translation"):
     return parser
 
 
+def get_analysis_parser():
+    parser = get_parser("Analysis")
+    parser.add_argument('--language-models-paths', metavar='FILE', help='path(s) to source language model file(s)')
+    parser.add_argument('--translation-models-paths', metavar='FILE', help='paths to translation model files')
+    add_dataset_args(parser, gen=True)
+    add_generation_args(parser)
+    return parser
+
+
 def get_interactive_generation_parser(default_task="translation"):
     return get_generation_parser(interactive=True, default_task=default_task)
 
@@ -597,19 +606,20 @@ def add_generation_args(parser):
                        help='if set, the last checkpoint are assumed to be a reranker to rescore the translations'),
     group.add_argument('--retain-iter-history', action='store_true',
                        help='if set, decoding returns the whole history of iterative refinement')
+    group.add_argument('--drop-tokens-proba', type=float, default=None,
+                       help='Probability of dropping source tokens for scoring')
+    group.add_argument('--drop-tokens-random', default=False, action='store_true',
+                       help='Substitute source tokens by random tokens')
     group.add_argument('--num-stochastic-passes', type=int, default=None,
                        help='Number of forward passes for inference with dropout')
     group.add_argument('--retain-dropout', action='store_true',
                        help='Use dropout at inference time')
     group.add_argument('--exclude-dropout-modules', default=None, nargs='+', type=str,
                        help='Exclude specified modules when using dropout at inference time.')
-    group.add_argument('--drop-tokens-proba', type=float, default=None,
-                       help='Probability of dropping source tokens for scoring')
-    group.add_argument('--drop-tokens-random', default=False, action='store_true',
-                       help='Substitute source tokens by random tokens')
     # special decoding format for advanced decoding.
     group.add_argument('--decoding-format', default=None, type=str, choices=['unigram', 'ensemble', 'vote', 'dp', 'bs'])
     # fmt: on
+    group.add_argument('--analysis-dir', default=None, type=str)
     return group
 
 

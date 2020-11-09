@@ -25,6 +25,7 @@ from fairseq.data import (
 )
 
 from fairseq.tasks import FairseqTask, register_task
+from fairseq.tasks.translation_with_lm import TranslationLanguageModelTask
 
 EVAL_BLEU_ORDER = 4
 
@@ -153,11 +154,11 @@ class TranslationTask(FairseqTask):
     """
 
     @staticmethod
-    def add_args(parser):
+    def add_args(parser, ignore_common_arguments=False):
         """Add task-specific arguments to the parser."""
         # fmt: off
-        parser.add_argument('data', help='colon separated path to data directories list, \
-                            will be iterated upon during epochs in round-robin manner')
+        if not ignore_common_arguments:
+            TranslationLanguageModelTask.add_args(parser)
         parser.add_argument('-s', '--source-lang', default=None, metavar='SRC',
                             help='source language')
         parser.add_argument('-t', '--target-lang', default=None, metavar='TARGET',
@@ -170,8 +171,6 @@ class TranslationTask(FairseqTask):
                             help='pad the target on the left')
         parser.add_argument('--max-source-positions', default=1024, type=int, metavar='N',
                             help='max number of tokens in the source sequence')
-        parser.add_argument('--max-target-positions', default=1024, type=int, metavar='N',
-                            help='max number of tokens in the target sequence')
         parser.add_argument('--upsample-primary', default=1, type=int,
                             help='amount to upsample primary dataset')
         parser.add_argument('--truncate-source', action='store_true', default=False,
