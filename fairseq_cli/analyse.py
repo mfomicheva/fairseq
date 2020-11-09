@@ -18,6 +18,10 @@ import torch
 from fairseq import options, utils
 from fairseq_cli.prepare_generation import prepare_iterator_task_generator_models
 
+from fairseq.tasks.translation_with_lm import TranslationLanguageModelTask
+from fairseq.tasks.language_modeling import LanguageModelingTask
+from fairseq.tasks.translation import TranslationTask
+
 from copy import deepcopy
 
 
@@ -67,6 +71,9 @@ def main(args):
 
 def cli_main():
     parser = options.get_analysis_parser()
+    TranslationLanguageModelTask.add_args(parser)
+    LanguageModelingTask.add_args(parser, ignore_common_arguments=True)
+    TranslationTask.add_args(parser, ignore_common_arguments=True)
     args = options.parse_args_and_arch(parser)
     main(args)
 
