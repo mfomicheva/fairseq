@@ -71,9 +71,6 @@ def main(args):
         for i, sample_id in enumerate(sample_tm['id'].tolist()):
             assert len(lm_hypos[i][0]['pmfs']) == len(tm_hypos[i][0]['pmfs'])
             for tstep in range(len(lm_hypos[i][0]['pmfs'])):
-                kl_prev = 0.
-                if tstep != 0:
-                    kl_prev = torch.distributions.kl_divergence(tm_hypos[i][0]['pmfs'][tstep], tm_hypos[i][0]['pmfs'][tstep - 1]).mean().cpu().data.numpy()
                 stats_data_it = {
                     'sentid': sample_id,
                     'tokid': lm_hypos[i][0]['tokens'][tstep].cpu().data.numpy(),
@@ -86,9 +83,6 @@ def main(args):
                     'tm_proba': tm_hypos[i][0]['positional_scores'][tstep].cpu().data.numpy(),
                     'kl_tm_lm': torch.distributions.kl_divergence(tm_hypos[i][0]['pmfs'][tstep], lm_hypos[i][0]['pmfs'][tstep]).mean().cpu().data.numpy(),
                     'kl_lm_tm': torch.distributions.kl_divergence(lm_hypos[i][0]['pmfs'][tstep], tm_hypos[i][0]['pmfs'][tstep]).mean().cpu().data.numpy(),
-                    'kl_tm_u': torch.distributions.kl_divergence(tm_hypos[i][0]['pmfs'][tstep], uniform).mean().cpu().data.numpy(),
-                    'kl_lm_u': torch.distributions.kl_divergence(lm_hypos[i][0]['pmfs'][tstep], uniform).mean().cpu().data.numpy(),
-                    'kl_prev': kl_prev,
                 }
                 stats_data.append(stats_data_it)
                 lm_hs.append(stats_data_it['entropy_lm'])
@@ -101,10 +95,6 @@ def main(args):
 
     df = pd.DataFrame(stats_data)
     df.to_csv(os.path.join(args.analysis_dir, 'stats_data.tsv'), sep='\t')
-
-    with open(os.path.join(args.analysis_dir, 'tm.scores'), 'w') as o:
-        for idx in sorted(scores):
-            o.write('{}\n'.format(scores[idx]))
 
 
 def cli_main():
