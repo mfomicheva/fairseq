@@ -54,9 +54,9 @@ def main(args):
 
     prob = 1/len(tm_task.tgt_dict)
     probs = torch.empty(len(tm_task.tgt_dict)).fill_(prob)
-    if use_cuda:
-        utils.move_to_cuda(probs)
     uniform = torch.distributions.Categorical(probs=probs)
+    if use_cuda:
+        utils.move_to_cuda(uniform)
 
     for _, sample_tm in zip(lm_iterator, tm_iterator):
         sample_lm = deepcopy(sample_tm)
