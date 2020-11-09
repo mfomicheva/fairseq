@@ -55,8 +55,8 @@ def main(args):
     prob = 1/len(tm_task.tgt_dict)
     probs = torch.empty(len(tm_task.tgt_dict)).fill_(prob)
     uniform = torch.distributions.Categorical(probs=probs)
-    if use_cuda:
-        utils.move_to_cuda(uniform)
+    # if use_cuda:
+    #    utils.move_to_cuda(uniform)
 
     for _, sample_tm in zip(lm_iterator, tm_iterator):
         sample_lm = deepcopy(sample_tm)
@@ -83,7 +83,7 @@ def main(args):
                     'tm_proba': tm_hypos[i][0]['positional_scores'][tstep].cpu().data.numpy(),
                     'kl_tm_lm': torch.distributions.kl_divergence(tm_hypos[i][0]['pmfs'][tstep], lm_hypos[i][0]['pmfs'][tstep]).mean().cpu().data.numpy(),
                     'kl_lm_tm': torch.distributions.kl_divergence(lm_hypos[i][0]['pmfs'][tstep], tm_hypos[i][0]['pmfs'][tstep]).mean().cpu().data.numpy(),
-                    'kl_tm_u': torch.distributions.kl_divergence(tm_hypos[i][0]['pmfs'][tstep], uniform).mean().cpu().data.numpy(),
+                    'kl_tm_u': torch.distributions.kl_divergence(tm_hypos[i][0]['pmfs'][tstep], uniform).mean().data.numpy(),
                     'kl_lm_u': torch.distributions.kl_divergence(lm_hypos[i][0]['pmfs'][tstep], uniform).mean().cpu().data.numpy(),
                 }
                 stats_data.append(stats_data_it)
