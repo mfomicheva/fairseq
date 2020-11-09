@@ -50,6 +50,7 @@ def main(args):
     lm_hs = []
     tm_hs = []
     stats_data = []
+    scores = {}
     for _, sample_tm in zip(lm_iterator, tm_iterator):
         sample_lm = deepcopy(sample_tm)
         sample_lm['net_input']['src_tokens'] = sample_tm['net_input']['prev_output_tokens']
@@ -77,6 +78,7 @@ def main(args):
                 stats_data.append(stats_data_it)
                 lm_hs.append(stats_data_it['entropy_lm'])
                 tm_hs.append(stats_data_it['entropy_tm'])
+                scores[sample_id] = tm_hypos[i][0]['score'].cpu().data.numpy()
     sns.distplot(lm_hs)
     sns.distplot(tm_hs)
     plt.savefig(os.path.join(args.analysis_dir, 'entropy.png'))
@@ -84,6 +86,10 @@ def main(args):
 
     df = pd.DataFrame(stats_data)
     df.to_csv(os.path.join(args.analysis_dir, 'stats_data.tsv'), sep='\t')
+
+    with open(os.path.join(args.analysis_dir, 'tm.scores'), 'w') as o:
+        for idx in sorted(scores):
+            o.write('{}\n'.format(scores[idx]))
 
 
 def cli_main():
