@@ -9,6 +9,7 @@ import logging
 import os
 import sys
 
+import pandas as pd
 import seaborn as sns
 
 from matplotlib import pyplot as plt
@@ -48,6 +49,7 @@ def main(args):
 
     lm_hs = []
     tm_hs = []
+    stats_data = []
     for _, sample_tm in zip(lm_iterator, tm_iterator):
         sample_lm = deepcopy(sample_tm)
         sample_lm['net_input']['src_tokens'] = sample_tm['net_input']['prev_output_tokens']
@@ -60,13 +62,26 @@ def main(args):
 
         for i, sample_id in enumerate(sample_tm['id'].tolist()):
             assert len(lm_hypos[i][0]['pmfs']) == len(tm_hypos[i][0]['pmfs'])
-            for tok_idx in range(len(lm_hypos[i][0]['pmfs'])):
-                lm_hs.append(lm_hypos[i][0]['pmfs'][tok_idx].entropy().data)
-                tm_hs.append(tm_hypos[i][0]['pmfs'][tok_idx].entropy().data)
+            for tstep in range(len(lm_hypos[i][0]['pmfs'])):
+                stats_data_it = {
+                    'sentid': sample_id,
+                    'tokid': lm_hypos[i][0]['tokens'][tstep].numpy(),
+                    'pos': tstep,
+                    'mode_lm': torch.argmax(lm_hypos[i][0]['pmfs'][tstep].probs).numpy(),
+                    'mode_tm': torch.argmax(tm_hypos[i][0]['pmfs'][tstep].probs).numpy(),
+                    'entropy_lm': lm_hypos[i][0]['pmfs'][tstep].entropy().data.numpy(),
+                    'entropy_tm': tm_hypos[i][0]['pmfs'][tstep].entropy().data.numpy(),
+                }
+                stats_data.append(stats_data_it)
+                lm_hs.append(stats_data_it['entropy_lm'])
+                tm_hs.append(stats_data_it['entropy_tm'])
     sns.distplot(lm_hs)
     sns.distplot(tm_hs)
     plt.savefig(os.path.join(args.analysis_dir, 'entropy.png'))
     plt.clf()
+
+    df = pd.DataFrame(stats_data)
+    df.to_csv(os.path.join(args.analysis_dir, 'stats_data.tsv'), sep='\t')
 
 
 def cli_main():
