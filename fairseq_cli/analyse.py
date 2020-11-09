@@ -74,7 +74,7 @@ def cli_main():
     TranslationLanguageModelTask.add_args(parser)
     LanguageModelingTask.add_args(parser, ignore_common_arguments=True)
     TranslationTask.add_args(parser, ignore_common_arguments=True)
-    args = parser.parse_args(parser)
+    args = parser.parse_args()
     main(args)
 
 
