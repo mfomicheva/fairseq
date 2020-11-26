@@ -377,14 +377,15 @@ def generate_main(data_dir, extra_flags=None, path=None):
     # evaluate model in batch mode
     generate.main(generate_args)
 
-    # evaluate model interactively
-    generate_args.buffer_size = 0
-    generate_args.input = "-"
-    generate_args.batch_size = None
-    orig_stdin = sys.stdin
-    sys.stdin = StringIO("h e l l o\n")
-    interactive.main(generate_args)
-    sys.stdin = orig_stdin
+    if not generate_args.score_reference:
+        # evaluate model interactively
+        generate_args.buffer_size = 0
+        generate_args.input = "-"
+        generate_args.batch_size = None
+        orig_stdin = sys.stdin
+        sys.stdin = StringIO("h e l l o\n")
+        interactive.main(generate_args)
+        sys.stdin = orig_stdin
 
 
 class TestDataset(torch.utils.data.Dataset):

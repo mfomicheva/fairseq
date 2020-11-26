@@ -102,6 +102,7 @@ class TestTranslation(unittest.TestCase):
                 create_dummy_data(data_dir)
                 preprocess_translation_data(data_dir)
                 train_translation_model(data_dir, "fconv_iwslt_de_en")
+                generate_main(data_dir, ["--score-reference"])
                 generate_main(
                     data_dir,
                     [

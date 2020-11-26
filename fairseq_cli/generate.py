@@ -299,6 +299,37 @@ def _main(cfg: DictConfig, output_file):
                         file=output_file,
                     )
 
+                    if cfg.generation.score_reference:
+                        print(
+                            "Z-{}\t{}".format(
+                                sample_id,
+                                " ".join(
+                                    map(
+                                        lambda x: "{:.4f}".format(x),
+                                        # convert from base e to base 2
+                                        hypo["argmax_probs"]
+                                        .tolist(),
+                                    )
+                                ),
+                            ),
+                            file=output_file,
+                        )
+
+                        print(
+                            "Y-{}\t{}".format(
+                                sample_id,
+                                " ".join(
+                                    map(
+                                        lambda x: "{:.4f}".format(x),
+                                        # convert from base e to base 2
+                                        hypo["argmax_accs"]
+                                            .tolist(),
+                                    )
+                                ),
+                            ),
+                            file=output_file,
+                        )
+
                     if cfg.generation.print_alignment:
                         print(
                             "A-{}\t{}".format(

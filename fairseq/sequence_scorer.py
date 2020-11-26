@@ -62,6 +62,7 @@ class SequenceScorer(object):
 
         # compute scores for each model in the ensemble
         avg_probs = None
+        avg_probs_v = None
         avg_attn = None
         for model in models:
             model.eval()
@@ -75,8 +76,14 @@ class SequenceScorer(object):
             for bd, tgt, is_single in batched:
                 sample["target"] = tgt
                 curr_prob = model.get_normalized_probs(
-                    bd, log_probs=len(models) == 1, sample=sample
+                    bd, log_probs=False, sample=sample
                 ).data
+
+                if avg_probs_v is None:
+                    avg_probs_v = curr_prob
+                else:
+                    avg_probs_v.add_(curr_prob)
+
                 if is_single:
                     probs = gather_target_probs(curr_prob, orig_target)
                 else:
@@ -106,11 +113,11 @@ class SequenceScorer(object):
                     avg_attn = attn
                 else:
                     avg_attn.add_(attn)
-        if len(models) > 1:
-            avg_probs.div_(len(models))
-            avg_probs.log_()
-            if avg_attn is not None:
-                avg_attn.div_(len(models))
+
+        avg_probs.div_(len(models))
+        avg_probs.log_()
+        if avg_attn is not None:
+            avg_attn.div_(len(models))
 
         bsz = avg_probs.size(0)
         hypos = []
@@ -123,8 +130,12 @@ class SequenceScorer(object):
                 else None
             )
             tgt_len = ref.numel()
-            avg_probs_i = avg_probs[i][start_idxs[i] : start_idxs[i] + tgt_len]
+            avg_probs_i = avg_probs[i][start_idxs[i]: start_idxs[i] + tgt_len]
             score_i = avg_probs_i.sum() / tgt_len
+
+            argmax_probs, indices = torch.max(avg_probs_v[i, :, :], dim=1)
+            argmax_accs = indices == sample["target"][i]
+            argmax_accs = argmax_accs.long()
             if avg_attn is not None:
                 avg_attn_i = avg_attn[i]
                 if self.compute_alignment:
@@ -147,6 +158,9 @@ class SequenceScorer(object):
                         "attention": avg_attn_i,
                         "alignment": alignment,
                         "positional_scores": avg_probs_i,
+                        "argmax_probs": argmax_probs,
+                        "argmax_accs": argmax_accs,
+
                     }
                 ]
             )
