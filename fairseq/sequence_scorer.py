@@ -134,8 +134,10 @@ class SequenceScorer(object):
             score_i = avg_probs_i.sum() / tgt_len
 
             argmax_probs, indices = torch.max(avg_probs_v[i, :, :], dim=1)
+            argmax_probs = argmax_probs[start_idxs[i]: start_idxs[i] + tgt_len]
             argmax_accs = indices == sample["target"][i]
             argmax_accs = argmax_accs.long()
+            argmax_accs = argmax_accs[start_idxs[i]: start_idxs[i] + tgt_len]
             if avg_attn is not None:
                 avg_attn_i = avg_attn[i]
                 if self.compute_alignment:
