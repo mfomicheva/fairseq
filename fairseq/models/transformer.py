@@ -945,7 +945,6 @@ def tiny_transformer(args):
     args.decoder_layers = getattr(args, "decoder_layers", 2)
     args.decoder_attention_heads = getattr(args, "decoder_attention_heads", 4)
     args.dropout = getattr(args, "dropout", 0.0)
-    args.share_all_embeddings = getattr(args, "share_all_embeddings", True)
 
 
 @register_model_architecture("transformer", "transformer")
