@@ -305,8 +305,14 @@ class FairseqTask(object):
     ):
         if getattr(args, "score_reference", False):
             from fairseq.sequence_scorer import SequenceScorer
+            from fairseq.sequence_scorer import SequenceScorerSampling
 
-            return SequenceScorer(
+            if getattr(args, "sampling", False):
+                seq_scorer_cls = SequenceScorerSampling
+            else:
+                seq_scorer_cls = SequenceScorer
+
+            return seq_scorer_cls(
                 self.target_dictionary,
                 compute_alignment=getattr(args, "print_alignment", False),
             )

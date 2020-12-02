@@ -31,33 +31,31 @@ class SequenceScorer(object):
             else {self.eos}
         )
 
-    @torch.no_grad()
-    def generate(self, models, sample, **kwargs):
-        """Score a batch of translations."""
+    def batch_for_softmax(self, dec_out, target):
+        # assumes decoder_out[0] is the only thing needed (may not be correct for future models!)
+        first, rest = dec_out[0], dec_out[1:]
+        bsz, tsz, dim = first.shape
+        if bsz * tsz < self.softmax_batch:
+            yield dec_out, target, True
+        else:
+            flat = first.contiguous().view(1, -1, dim)
+            flat_tgt = target.contiguous().view(flat.shape[:-1])
+            s = 0
+            while s < flat.size(1):
+                e = s + self.softmax_batch
+                yield (flat[:, s:e],) + rest, flat_tgt[:, s:e], False
+                s = e
+
+    def gather_target_probs(self, probs, target):
+        probs = probs.gather(
+            dim=2,
+            index=target.unsqueeze(-1),
+        )
+        return probs
+
+    def compute_scores(self, sample, models, sample_from_model_at_step=1):
+
         net_input = sample["net_input"]
-
-        def batch_for_softmax(dec_out, target):
-            # assumes decoder_out[0] is the only thing needed (may not be correct for future models!)
-            first, rest = dec_out[0], dec_out[1:]
-            bsz, tsz, dim = first.shape
-            if bsz * tsz < self.softmax_batch:
-                yield dec_out, target, True
-            else:
-                flat = first.contiguous().view(1, -1, dim)
-                flat_tgt = target.contiguous().view(flat.shape[:-1])
-                s = 0
-                while s < flat.size(1):
-                    e = s + self.softmax_batch
-                    yield (flat[:, s:e],) + rest, flat_tgt[:, s:e], False
-                    s = e
-
-        def gather_target_probs(probs, target):
-            probs = probs.gather(
-                dim=2,
-                index=target.unsqueeze(-1),
-            )
-            return probs
-
         orig_target = sample["target"]
 
         # compute scores for each model in the ensemble
@@ -71,7 +69,7 @@ class SequenceScorer(object):
             if type(attn) is dict:
                 attn = attn.get("attn", None)
 
-            batched = batch_for_softmax(decoder_out, orig_target)
+            batched = self.batch_for_softmax(decoder_out, orig_target)
             probs, idx = None, 0
             for bd, tgt, is_single in batched:
                 sample["target"] = tgt
@@ -85,13 +83,13 @@ class SequenceScorer(object):
                     avg_probs_v.add_(curr_prob)
 
                 if is_single:
-                    probs = gather_target_probs(curr_prob, orig_target)
+                    probs = self.gather_target_probs(curr_prob, orig_target)
                 else:
                     if probs is None:
                         probs = curr_prob.new(orig_target.numel())
                     step = curr_prob.size(0) * curr_prob.size(1)
                     end = step + idx
-                    tgt_probs = gather_target_probs(
+                    tgt_probs = self.gather_target_probs(
                         curr_prob.view(tgt.shape + (curr_prob.size(-1),)), tgt
                     )
                     probs[idx:end] = tgt_probs.view(-1)
@@ -119,7 +117,9 @@ class SequenceScorer(object):
         if avg_attn is not None:
             avg_attn.div_(len(models))
 
-        bsz = avg_probs.size(0)
+        return avg_probs, avg_probs_v, avg_attn
+
+    def prepare_hypotheses(self, sample, bsz, avg_probs, avg_probs_v, avg_attn):
         hypos = []
         start_idxs = sample["start_indices"] if "start_indices" in sample else [0] * bsz
         for i in range(bsz):
@@ -167,3 +167,32 @@ class SequenceScorer(object):
                 ]
             )
         return hypos
+
+    @torch.no_grad()
+    def generate(self, models, sample, **kwargs):
+        """Score a batch of translations."""
+        avg_probs, avg_probs_v, avg_attn = self.compute_scores(sample, models)
+        bsz = avg_probs.size(0)
+        return self.prepare_hypotheses(sample, bsz, avg_probs, avg_probs_v, avg_attn)
+
+
+class SequenceScorerSampling(SequenceScorer):
+
+    @torch.no_grad()
+    def generate(self, models, sample, **kwargs):
+        """Score a batch of translations."""
+
+        avg_probs, avg_probs_v, avg_attn = self.compute_scores(sample, models)
+        bsz = avg_probs.size(0)
+        for step in range(1):
+            avg_probs, avg_probs_v, avg_attn = self.compute_scores(sample, models)
+            bsz = avg_probs_v.size(0)
+            start_idxs = sample["start_indices"] if "start_indices" in sample else [0] * bsz
+            for i in range(bsz):
+                tgt_len = len(utils.strip_pad(sample["net_input"]["prev_output_tokens"][i, start_idxs[i]:], self.pad))
+                argmin_probs, indices = torch.min(avg_probs_v[i, :, :], dim=1)
+                sample_idx = torch.randint(tgt_len, [1]).item()
+                sample["net_input"]["prev_output_tokens"][i][sample_idx + 1] = indices[sample_idx]
+                sample["target"][i][sample_idx] = indices[sample_idx]
+
+        return self.prepare_hypotheses(sample, bsz, avg_probs, avg_probs_v, avg_attn)
