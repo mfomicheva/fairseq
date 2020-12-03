@@ -178,21 +178,42 @@ class SequenceScorer(object):
 
 class SequenceScorerSampling(SequenceScorer):
 
+    def __init__(self,
+        tgt_dict,
+        softmax_batch=None,
+        compute_alignment=False,
+        eos=None,
+        symbols_to_strip_from_output=None,
+        replacement_probability=0.3,
+        max_replacement_steps=100,
+    ):
+        super().__init__(
+            tgt_dict, softmax_batch=softmax_batch, compute_alignment=compute_alignment, eos=eos,
+            symbols_to_strip_from_output=symbols_to_strip_from_output,)
+        self.replacement_probability = replacement_probability
+        self.max_replacement_steps = max_replacement_steps
+
     @torch.no_grad()
     def generate(self, models, sample, **kwargs):
-        """Score a batch of translations."""
-
         avg_probs, avg_probs_v, avg_attn = self.compute_scores(sample, models)
         bsz = avg_probs.size(0)
-        for step in range(1):
+        tgt_len = sample["target"].ne(self.pad).long().sum(axis=1)
+        num_replaced_els = torch.zeros(bsz).long()
+        num_els_to_replace = (tgt_len * self.replacement_probability).long()
+        for step in range(self.max_replacement_steps):
             avg_probs, avg_probs_v, avg_attn = self.compute_scores(sample, models)
             bsz = avg_probs_v.size(0)
-            start_idxs = sample["start_indices"] if "start_indices" in sample else [0] * bsz
             for i in range(bsz):
-                tgt_len = len(utils.strip_pad(sample["net_input"]["prev_output_tokens"][i, start_idxs[i]:], self.pad))
-                argmin_probs, indices = torch.min(avg_probs_v[i, :, :], dim=1)
-                sample_idx = torch.randint(tgt_len, [1]).item()
-                sample["net_input"]["prev_output_tokens"][i][sample_idx + 1] = indices[sample_idx]
-                sample["target"][i][sample_idx] = indices[sample_idx]
+                if num_replaced_els[i] == num_els_to_replace[i]:
+                    continue
+                tgt_idx = torch.randint(tgt_len[i] - 1, [1]).item()
+                sampled_token = self.pad
+                while sampled_token == self.pad or sampled_token == self.eos:
+                    sampled_token = torch.multinomial(avg_probs_v[i, tgt_idx, :], 1, replacement=True)
+                sample["net_input"]["prev_output_tokens"][i][tgt_idx + 1] = sampled_token
+                sample["target"][i][tgt_idx] = sampled_token
+                num_replaced_els[i] += 1
+            if torch.equal(num_els_to_replace, num_replaced_els):
+                break
 
         return self.prepare_hypotheses(sample, bsz, avg_probs, avg_probs_v, avg_attn)
