@@ -23,6 +23,7 @@ class SequenceScorer(object):
         self.pad = tgt_dict.pad()
         self.eos = tgt_dict.eos() if eos is None else eos
         self.unk = tgt_dict.unk()
+        self.tgt_dict = tgt_dict
         self.softmax_batch = softmax_batch or sys.maxsize
         assert self.softmax_batch > 0
         self.compute_alignment = compute_alignment
@@ -192,6 +193,7 @@ class SequenceScorerSampling(SequenceScorer):
             symbols_to_strip_from_output=symbols_to_strip_from_output,)
         self.replacement_probability = replacement_probability
         self.max_replacement_steps = max_replacement_steps
+        self.bpe_sep = '@@'
 
     @torch.no_grad()
     def generate(self, models, sample, **kwargs):
@@ -213,7 +215,8 @@ class SequenceScorerSampling(SequenceScorer):
                 tgt_idx = torch.randint(tgt_len[i] - 1, [1]).item()
                 sampled_token = self.pad
                 while sampled_token == self.pad or sampled_token == self.eos or sampled_token == self.unk \
-                    or sampled_token == sample["target"][i][tgt_idx]:
+                    or sampled_token == sample["target"][i][tgt_idx] or self.bpe_sep in self.tgt_dict[sampled_token] \
+                        or self.bpe_sep in self.tgt_dict[sample["target"][i][tgt_idx]]:
                     sampled_token = torch.multinomial(avg_probs_v[i, tgt_idx, :], 1, replacement=True)
                 sample["net_input"]["prev_output_tokens"][i][tgt_idx + 1] = sampled_token
                 sample["target"][i][tgt_idx] = sampled_token
