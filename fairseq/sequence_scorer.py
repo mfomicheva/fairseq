@@ -22,6 +22,7 @@ class SequenceScorer(object):
     ):
         self.pad = tgt_dict.pad()
         self.eos = tgt_dict.eos() if eos is None else eos
+        self.unk = tgt_dict.unk()
         self.softmax_batch = softmax_batch or sys.maxsize
         assert self.softmax_batch > 0
         self.compute_alignment = compute_alignment
@@ -138,6 +139,7 @@ class SequenceScorer(object):
             argmax_accs = indices == sample["target"][i]
             argmax_accs = argmax_accs.long()
             argmax_accs = argmax_accs[start_idxs[i]: start_idxs[i] + tgt_len]
+
             if avg_attn is not None:
                 avg_attn_i = avg_attn[i]
                 if self.compute_alignment:
@@ -152,20 +154,18 @@ class SequenceScorer(object):
                     alignment = None
             else:
                 avg_attn_i = alignment = None
-            hypos.append(
-                [
-                    {
-                        "tokens": ref,
-                        "score": score_i,
-                        "attention": avg_attn_i,
-                        "alignment": alignment,
-                        "positional_scores": avg_probs_i,
-                        "argmax_probs": argmax_probs,
-                        "argmax_accs": argmax_accs,
-
-                    }
-                ]
-            )
+            hypo_data = {
+                "tokens": ref,
+                "score": score_i,
+                "attention": avg_attn_i,
+                "alignment": alignment,
+                "positional_scores": avg_probs_i,
+                "argmax_probs": argmax_probs,
+                "argmax_accs": argmax_accs,
+            }
+            if "replaced" in sample:
+                hypo_data.update({"replaced": sample["replaced"][i][start_idxs[i]: start_idxs[i] + tgt_len]})
+            hypos.append([hypo_data])
         return hypos
 
     @torch.no_grad()
@@ -196,24 +196,29 @@ class SequenceScorerSampling(SequenceScorer):
     @torch.no_grad()
     def generate(self, models, sample, **kwargs):
         avg_probs, avg_probs_v, avg_attn = self.compute_scores(sample, models)
+        device = avg_probs.device
         bsz = avg_probs.size(0)
         tgt_len = sample["target"].ne(self.pad).long().sum(axis=1)
-        num_replaced_els = torch.zeros(bsz).long().to(avg_probs.device)
-        num_els_to_replace = (tgt_len * self.replacement_probability).long()
+
+        sample["replaced"] = torch.zeros(sample["target"].size()).long().to(device)
+        num_replaced_tokens = torch.zeros(bsz).long().to(device)
+        num_tokens_to_replace = (tgt_len * self.replacement_probability).long()
+
         for step in range(self.max_replacement_steps):
             avg_probs, avg_probs_v, avg_attn = self.compute_scores(sample, models)
             bsz = avg_probs_v.size(0)
             for i in range(bsz):
-                if num_replaced_els[i] == num_els_to_replace[i]:
+                if num_replaced_tokens[i] == num_tokens_to_replace[i]:
                     continue
                 tgt_idx = torch.randint(tgt_len[i] - 1, [1]).item()
                 sampled_token = self.pad
-                while sampled_token == self.pad or sampled_token == self.eos:
+                while sampled_token == self.pad or sampled_token == self.eos or sampled_token == self.unk:
                     sampled_token = torch.multinomial(avg_probs_v[i, tgt_idx, :], 1, replacement=True)
                 sample["net_input"]["prev_output_tokens"][i][tgt_idx + 1] = sampled_token
                 sample["target"][i][tgt_idx] = sampled_token
-                num_replaced_els[i] += 1
-            if torch.equal(num_els_to_replace, num_replaced_els):
+                sample["replaced"][i][tgt_idx] = 1
+                num_replaced_tokens[i] += 1
+            if torch.equal(num_tokens_to_replace, num_replaced_tokens):
                 break
 
         return self.prepare_hypotheses(sample, bsz, avg_probs, avg_probs_v, avg_attn)

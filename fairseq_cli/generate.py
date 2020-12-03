@@ -299,6 +299,22 @@ def _main(cfg: DictConfig, output_file):
                         file=output_file,
                     )
 
+                    if cfg.generation.score_reference and cfg.generation.sampling:
+                        print(
+                            "X-{}\t{}".format(
+                                sample_id,
+                                " ".join(
+                                    map(
+                                        lambda x: "{}".format(x),
+                                        # convert from base e to base 2
+                                        hypo["replaced"]
+                                        .tolist(),
+                                    )
+                                ),
+                            ),
+                            file=output_file,
+                        )
+
                     if cfg.generation.score_reference:
                         print(
                             "Z-{}\t{}".format(
