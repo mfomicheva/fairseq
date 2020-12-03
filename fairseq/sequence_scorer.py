@@ -198,7 +198,7 @@ class SequenceScorerSampling(SequenceScorer):
         avg_probs, avg_probs_v, avg_attn = self.compute_scores(sample, models)
         bsz = avg_probs.size(0)
         tgt_len = sample["target"].ne(self.pad).long().sum(axis=1)
-        num_replaced_els = torch.zeros(bsz).long()
+        num_replaced_els = torch.zeros(bsz).long().to(avg_probs.device)
         num_els_to_replace = (tgt_len * self.replacement_probability).long()
         for step in range(self.max_replacement_steps):
             avg_probs, avg_probs_v, avg_attn = self.compute_scores(sample, models)
