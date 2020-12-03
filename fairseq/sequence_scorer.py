@@ -23,6 +23,7 @@ class SequenceScorer(object):
         self.pad = tgt_dict.pad()
         self.eos = tgt_dict.eos() if eos is None else eos
         self.unk = tgt_dict.unk()
+        self.bos = tgt_dict.bos()
         self.tgt_dict = tgt_dict
         self.softmax_batch = softmax_batch or sys.maxsize
         assert self.softmax_batch > 0
@@ -215,8 +216,10 @@ class SequenceScorerSampling(SequenceScorer):
                 tgt_idx = torch.randint(tgt_len[i] - 1, [1]).item()
                 sampled_token = self.pad
                 while sampled_token == self.pad or sampled_token == self.eos or sampled_token == self.unk \
-                    or sampled_token == sample["target"][i][tgt_idx]: # or self.bpe_sep in self.tgt_dict[sampled_token] \
-                    # or self.bpe_sep in self.tgt_dict[sample["target"][i][tgt_idx]]:  # TODO: mask token ids corresponding to the tokens we don't want to sample
+                    or sampled_token == sample["target"][i][tgt_idx] or sampled_token == self.bos:
+                    # or self.bpe_sep in self.tgt_dict[sampled_token] \
+                    # or self.bpe_sep in self.tgt_dict[sample["target"][i][tgt_idx]]:
+                    # TODO: mask token ids corresponding to the tokens we don't want to sample
                     sampled_token = torch.multinomial(avg_probs_v[i, tgt_idx, :], 1, replacement=True)
                 sample["net_input"]["prev_output_tokens"][i][tgt_idx + 1] = sampled_token
                 sample["target"][i][tgt_idx] = sampled_token
@@ -224,5 +227,6 @@ class SequenceScorerSampling(SequenceScorer):
                 num_replaced_tokens[i] += 1
             if torch.equal(num_tokens_to_replace, num_replaced_tokens):
                 break
+        assert sample["replaced"].size() == sample["target"].size()
 
         return self.prepare_hypotheses(sample, bsz, avg_probs, avg_probs_v, avg_attn)

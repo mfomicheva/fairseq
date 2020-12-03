@@ -57,6 +57,24 @@ def get_symbols_to_strip_from_output(generator):
         return {generator.eos}
 
 
+def remove_bpe_from_replaced(replaced_tokens, replaced_bool, bpe_sep='@@'):
+    waiting = False
+    num = 0
+    replaced_bool_mapped = []
+    for i, xni in enumerate(replaced_bool):
+        num = max(num, xni)
+        if bpe_sep in replaced_tokens[i]:
+            waiting = True
+            continue
+        else:
+            replaced_bool_mapped.append(num) if waiting else replaced_bool_mapped.append(xni)
+            num = 0
+            waiting = False
+    if waiting:
+        replaced_bool_mapped.append(num)
+    return replaced_bool_mapped, ''.join(' '.join(replaced_tokens).split('@@ ')).strip('@@')
+
+
 def _main(cfg: DictConfig, output_file):
     logging.basicConfig(
         format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
@@ -300,6 +318,7 @@ def _main(cfg: DictConfig, output_file):
                     )
 
                     if cfg.generation.score_reference and cfg.generation.sampling:
+                        hypo["replaced"], _ = remove_bpe_from_replaced(hypo_str.split(), hypo["replaced"][:-1])  # ignore eos
                         print(
                             "X-{}\t{}".format(
                                 sample_id,
@@ -308,7 +327,6 @@ def _main(cfg: DictConfig, output_file):
                                         lambda x: "{}".format(x),
                                         # convert from base e to base 2
                                         hypo["replaced"]
-                                        .tolist(),
                                     )
                                 ),
                             ),
