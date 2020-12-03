@@ -212,7 +212,8 @@ class SequenceScorerSampling(SequenceScorer):
                     continue
                 tgt_idx = torch.randint(tgt_len[i] - 1, [1]).item()
                 sampled_token = self.pad
-                while sampled_token == self.pad or sampled_token == self.eos or sampled_token == self.unk:
+                while sampled_token == self.pad or sampled_token == self.eos or sampled_token == self.unk \
+                    or sampled_token == sample["target"][i][tgt_idx]:
                     sampled_token = torch.multinomial(avg_probs_v[i, tgt_idx, :], 1, replacement=True)
                 sample["net_input"]["prev_output_tokens"][i][tgt_idx + 1] = sampled_token
                 sample["target"][i][tgt_idx] = sampled_token
