@@ -199,21 +199,22 @@ class SequenceScorerSampling(SequenceScorer):
     @torch.no_grad()
     def generate(self, models, sample, **kwargs):
         avg_probs, avg_probs_v, avg_attn = self.compute_scores(sample, models)
-        device = avg_probs.device
         bsz = avg_probs.size(0)
         tgt_len = sample["target"].ne(self.pad).long().sum(axis=1)
 
-        sample["replaced"] = torch.zeros(sample["target"].size()).long().to(device)
-        num_replaced_tokens = torch.zeros(bsz).long().to(device)
-        num_tokens_to_replace = (tgt_len * self.replacement_probability).long()
+        sample["replaced"] = dict()
+        replace_indices = dict()
+        for i in range(bsz):
+            sample["replaced"][i] = torch.bernoulli(torch.tensor([self.replacement_probability]).repeat(tgt_len[i] - 1))
+            replace_indices[i] = sample["replaced"][i].nonzero()
 
         for step in range(self.max_replacement_steps):
             avg_probs, avg_probs_v, avg_attn = self.compute_scores(sample, models)
             bsz = avg_probs_v.size(0)
             for i in range(bsz):
-                if num_replaced_tokens[i] == num_tokens_to_replace[i]:
+                if len(replace_indices[i]) == 0:
                     continue
-                tgt_idx = torch.randint(tgt_len[i] - 1, [1]).item()
+                tgt_idx = replace_indices[i][0]
                 sampled_token = self.pad
                 while sampled_token == self.pad or sampled_token == self.eos or sampled_token == self.unk \
                     or sampled_token == sample["target"][i][tgt_idx] or sampled_token == self.bos:
@@ -223,10 +224,6 @@ class SequenceScorerSampling(SequenceScorer):
                     sampled_token = torch.multinomial(avg_probs_v[i, tgt_idx, :], 1, replacement=True)
                 sample["net_input"]["prev_output_tokens"][i][tgt_idx + 1] = sampled_token
                 sample["target"][i][tgt_idx] = sampled_token
-                sample["replaced"][i][tgt_idx] = 1
-                num_replaced_tokens[i] += 1
-            if torch.equal(num_tokens_to_replace, num_replaced_tokens):
-                break
-        assert sample["replaced"].size() == sample["target"].size()
+                replace_indices[i] = replace_indices[i][1:]
 
         return self.prepare_hypotheses(sample, bsz, avg_probs, avg_probs_v, avg_attn)
