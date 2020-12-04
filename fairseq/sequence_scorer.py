@@ -186,7 +186,7 @@ class SequenceScorerSampling(SequenceScorer):
         compute_alignment=False,
         eos=None,
         symbols_to_strip_from_output=None,
-        replacement_probability=0.3,
+        replacement_probability=0.2,
         max_replacement_steps=100,
     ):
         super().__init__(
@@ -205,7 +205,7 @@ class SequenceScorerSampling(SequenceScorer):
         sample["replaced"] = dict()
         replace_indices = dict()
         for i in range(bsz):
-            sample["replaced"][i] = torch.bernoulli(torch.tensor([self.replacement_probability]).repeat(tgt_len[i] - 1))
+            sample["replaced"][i] = torch.bernoulli(torch.tensor([self.replacement_probability]).repeat(tgt_len[i] - 1)).long()
             replace_indices[i] = sample["replaced"][i].nonzero()
 
         for step in range(self.max_replacement_steps):
