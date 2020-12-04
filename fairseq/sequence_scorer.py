@@ -217,9 +217,8 @@ class SequenceScorerSampling(SequenceScorer):
                 tgt_idx = replace_indices[i][0]
                 sampled_token = self.pad
                 while sampled_token == self.pad or sampled_token == self.eos or sampled_token == self.unk \
-                    or sampled_token == sample["target"][i][tgt_idx] or sampled_token == self.bos:
-                    # or self.bpe_sep in self.tgt_dict[sampled_token] \
-                    # or self.bpe_sep in self.tgt_dict[sample["target"][i][tgt_idx]]:
+                    or sampled_token == sample["target"][i][tgt_idx] or sampled_token == self.bos \
+                    or (self.bpe_sep in self.tgt_dict[sampled_token] != self.bpe_sep in self.tgt_dict[sample["target"][i][tgt_idx]]):
                     # TODO: mask token ids corresponding to the tokens we don't want to sample
                     sampled_token = torch.multinomial(avg_probs_v[i, tgt_idx, :], 1, replacement=True)
                 sample["net_input"]["prev_output_tokens"][i][tgt_idx + 1] = sampled_token
