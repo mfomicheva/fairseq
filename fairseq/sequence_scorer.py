@@ -218,7 +218,8 @@ class SequenceScorerSampling(SequenceScorer):
                     continue
                 tgt_pos = replace_indices[i][0]
                 ref_token = sample["target"][i][tgt_pos]
-                probs = avg_probs_v[i, tgt_pos, :].view(-1)
+                probs = avg_probs_v.detach().clone()
+                probs = probs[i, tgt_pos, :].view(-1)
                 probs[self.bos] = 0.
                 probs[self.eos] = 0.
                 probs[self.unk] = 0.
