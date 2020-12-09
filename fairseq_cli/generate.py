@@ -318,7 +318,6 @@ def _main(cfg: DictConfig, output_file):
                     )
 
                     if cfg.generation.score_reference and cfg.generation.sampling:
-                        hypo["replaced"], _ = remove_bpe_from_replaced(hypo_str.split(), hypo["replaced"][:-1])  # ignore eos
                         print(
                             "X-{}\t{}".format(
                                 sample_id,

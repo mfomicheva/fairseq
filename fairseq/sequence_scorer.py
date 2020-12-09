@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import math
 import sys
 
 import torch
@@ -205,7 +206,8 @@ class SequenceScorerSampling(SequenceScorer):
         sample["replaced"] = dict()
         replace_indices = dict()
         for i in range(bsz):
-            sample["replaced"][i] = torch.bernoulli(torch.tensor([self.replacement_probability]).repeat(tgt_len[i] - 1)).long()
+            sample["replaced"][i] = torch.bernoulli(torch.tensor([self.replacement_probability]).
+                                                    repeat(tgt_len[i] - 1)).long()
             replace_indices[i] = sample["replaced"][i].nonzero()
 
         for step in range(self.max_replacement_steps):
@@ -214,15 +216,18 @@ class SequenceScorerSampling(SequenceScorer):
             for i in range(bsz):
                 if len(replace_indices[i]) == 0:
                     continue
-                tgt_idx = replace_indices[i][0]
-                sampled_token = self.pad
-                while sampled_token == self.pad or sampled_token == self.eos or sampled_token == self.unk \
-                    or sampled_token == sample["target"][i][tgt_idx] or sampled_token == self.bos \
-                    or (self.bpe_sep in self.tgt_dict[sampled_token] != self.bpe_sep in self.tgt_dict[sample["target"][i][tgt_idx]]):
-                    # TODO: mask token ids corresponding to the tokens we don't want to sample
-                    sampled_token = torch.multinomial(avg_probs_v[i, tgt_idx, :], 1, replacement=True)
-                sample["net_input"]["prev_output_tokens"][i][tgt_idx + 1] = sampled_token
-                sample["target"][i][tgt_idx] = sampled_token
+                tgt_pos = replace_indices[i][0]
+                ref_token = sample["target"][i][tgt_pos]
+                probs = avg_probs_v[i, tgt_pos, :].view(-1)
+                probs[self.bos] = 0.
+                probs[self.eos] = 0.
+                probs[self.unk] = 0.
+                probs[ref_token] = 0.  # Never select reference token
+                sampled_token = None
+                while sampled_token is None or (self.bpe_sep in self.tgt_dict[sampled_token] != self.bpe_sep in self.tgt_dict[ref_token]):
+                    sampled_token = torch.multinomial(probs, 1, replacement=True)
+                sample["net_input"]["prev_output_tokens"][i][tgt_pos + 1] = sampled_token
+                sample["target"][i][tgt_pos] = sampled_token
                 replace_indices[i] = replace_indices[i][1:]
 
         return self.prepare_hypotheses(sample, bsz, avg_probs, avg_probs_v, avg_attn)
