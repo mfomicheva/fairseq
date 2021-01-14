@@ -314,6 +314,7 @@ class FairseqTask(object):
 
             return seq_scorer_cls(
                 self.target_dictionary,
+                temperature=args.temperature,
                 compute_alignment=getattr(args, "print_alignment", False),
             )
 
