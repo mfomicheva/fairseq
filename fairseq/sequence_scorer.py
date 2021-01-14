@@ -72,7 +72,7 @@ class SequenceScorer(object):
             model.eval()
             decoder_out = model(**net_input)
             decoder_out_tuple = (
-                decoder_out[0][:, -1:, :].div_(self.temperature),
+                decoder_out[0].div_(self.temperature),
                 decoder_out[1] if len(decoder_out) > 1 else None
             )
             attn = decoder_out_tuple[1]
