@@ -20,6 +20,7 @@ class SequenceScorer(object):
         compute_alignment=False,
         eos=None,
         symbols_to_strip_from_output=None,
+        temperature=1.0,
     ):
         self.pad = tgt_dict.pad()
         self.eos = tgt_dict.eos() if eos is None else eos
@@ -27,6 +28,7 @@ class SequenceScorer(object):
         self.bos = tgt_dict.bos()
         self.tgt_dict = tgt_dict
         self.softmax_batch = softmax_batch or sys.maxsize
+        self.temperature = temperature
         assert self.softmax_batch > 0
         self.compute_alignment = compute_alignment
         self.symbols_to_strip_from_output = (
@@ -57,7 +59,7 @@ class SequenceScorer(object):
         )
         return probs
 
-    def compute_scores(self, sample, models, sample_from_model_at_step=1):
+    def compute_scores(self, sample, models):
 
         net_input = sample["net_input"]
         orig_target = sample["target"]
@@ -69,6 +71,7 @@ class SequenceScorer(object):
         for model in models:
             model.eval()
             decoder_out = model(**net_input)
+            decoder_out[0] = decoder_out[0][:, -1:, :].div_(self.temperature)
             attn = decoder_out[1] if len(decoder_out) > 1 else None
             if type(attn) is dict:
                 attn = attn.get("attn", None)
