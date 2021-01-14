@@ -71,12 +71,15 @@ class SequenceScorer(object):
         for model in models:
             model.eval()
             decoder_out = model(**net_input)
-            decoder_out[0] = decoder_out[0][:, -1:, :].div_(self.temperature)
-            attn = decoder_out[1] if len(decoder_out) > 1 else None
+            decoder_out_tuple = (
+                decoder_out[0][:, -1:, :].div_(self.temperature),
+                decoder_out[1] if len(decoder_out) > 1 else None
+            )
+            attn = decoder_out_tuple[1]
             if type(attn) is dict:
                 attn = attn.get("attn", None)
 
-            batched = self.batch_for_softmax(decoder_out, orig_target)
+            batched = self.batch_for_softmax(decoder_out_tuple, orig_target)
             probs, idx = None, 0
             for bd, tgt, is_single in batched:
                 sample["target"] = tgt
