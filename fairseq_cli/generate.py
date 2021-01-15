@@ -324,12 +324,24 @@ def _main(cfg: DictConfig, output_file):
                                 " ".join(
                                     map(
                                         lambda x: "{}".format(x),
-                                        # convert from base e to base 2
                                         hypo["replaced"]
                                     )
                                 ),
                             ),
                             file=output_file,
+                        )
+
+                    if "pmfs" in hypo:
+                        print(
+                            "W-{}\t{}".format(
+                                sample_id,
+                                " ".join(
+                                    map(
+                                        lambda x: "{}".format(x),
+                                        [pmf.entropy().cpu().data.numpy() for pmf in hypo["pmfs"]]
+                                    )
+                                )
+                            )
                         )
 
                     if cfg.generation.score_reference:
