@@ -140,6 +140,11 @@ class SequenceScorer(object):
                 else None
             )
             tgt_len = ref.numel()
+
+            pmfs = []
+            for tokenid in range(tgt_len):
+                pmfs.append(torch.distributions.Categorical(probs=avg_probs_v[i, tokenid, :]))
+
             avg_probs_i = avg_probs[i][start_idxs[i]: start_idxs[i] + tgt_len]
             score_i = avg_probs_i.sum() / tgt_len
 
@@ -171,6 +176,7 @@ class SequenceScorer(object):
                 "positional_scores": avg_probs_i,
                 "argmax_probs": argmax_probs,
                 "argmax_accs": argmax_accs,
+                "pmfs": pmfs,
             }
             if "replaced" in sample:
                 hypo_data.update({"replaced": sample["replaced"][i][start_idxs[i]: start_idxs[i] + tgt_len]})
